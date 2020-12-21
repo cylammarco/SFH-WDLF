@@ -6,10 +6,11 @@ from scipy import interpolate as itp
 from scipy.optimize import minimize
 #import mwdust
 from scipy.signal import medfilt
-import healpy.pixelfunc as hp
+import astropy_healpix as hp
 #from numba import jit
 from matplotlib.pyplot import *
 ion()
+
 
 def eq2gal(ra, dec, intype='degrees', outtype='degrees'):
     """
@@ -65,10 +66,13 @@ def volume(D, sinb, z, H):
     xi = H / sinb
     exponent = (D * sinb + z) / H
     if exponent >= 0:
-        v = -np.exp(-exponent) * (2*xi**3. + 2*D*xi**2. + D**2.*xi) + 2.*xi**3. * np.exp(-z/H)
+        v = -np.exp(-exponent) * (2 * xi**3. + 2 * D * xi**2. +
+                                  D**2. * xi) + 2. * xi**3. * np.exp(-z / H)
     else:
-        v = np.exp(exponent) * (2*xi**3. - 2*D*xi**2. + D**2.*xi) - 2.*xi**3. * np.exp(z/H)
+        v = np.exp(exponent) * (2 * xi**3. - 2 * D * xi**2. +
+                                D**2. * xi) - 2. * xi**3. * np.exp(z / H)
     return v
+
 
 #@jit
 def find_d_limit(max_dist, parallax, mag, par_itp, sig, mag_low, mag_high):
@@ -103,12 +107,12 @@ def find_d_limit(max_dist, parallax, mag, par_itp, sig, mag_low, mag_high):
 
     if (max_dist > 100.):
         return np.inf
-    mod = np.log10(1000. / parallax)*5. - 5.
-    max_mod = np.log10(max_dist)*5. - 5.
+    mod = np.log10(1000. / parallax) * 5. - 5.
+    max_mod = np.log10(max_dist) * 5. - 5.
     mag_new = mag + max_mod - mod
     if (mag_new > mag_low) & (mag_new < mag_high):
         parallax_error = par_itp(mag_new)
-        diff = np.abs(parallax - sig*parallax_error)
+        diff = np.abs(parallax - sig * parallax_error)
         return diff
     else:
         return np.inf
@@ -118,7 +122,6 @@ def find_d_limit(max_dist, parallax, mag, par_itp, sig, mag_low, mag_high):
 extinction = mwdust.Combined15()
 extinction(30.,3.,np.array([1.,2.,3.,10.,100.]))
 '''
-
 '''
 (1) Paralllax Error as a function of (a) HEALPix position; (b) G mag
 (2) 4.0 < G / mag < 20.3. (spline constructed with 4.9 to 20.5)
@@ -128,19 +131,21 @@ extinction(30.,3.,np.array([1.,2.,3.,10.,100.]))
 '''
 
 # GDR2 data
-data = np.genfromtxt('/Users/marcolam/git/gaia_wdlf/kilic2018-result.csv', delimiter=",", names=True)
+data = np.genfromtxt('kilic2018-result.csv', delimiter=",", names=True)
 
 # parallax error as a function of g_mean_mag
 #argsorted = np.argsort(data['phot_g_mean_mag'])
 #par_itp = itp.interp1d(data['phot_g_mean_mag'][argsorted], data['parallax_error'][argsorted], fill_value='extrapolate')
 par_err_spl = np.array([['']] * hp.nside2npix(2), dtype='object')
 for i in range(hp.nside2npix(2)):
-    par_err_spl[i] = pickle.load(open('/Users/marcolam/Desktop/Gaia_phot/nside_2/par_err_pix_' + str(i) + '.pkl', 'rb'))
+    par_err_spl[i] = pickle.load(
+        open(
+            '/Users/marcolam/Desktop/Gaia_phot/nside_2/par_err_pix_' + str(i) +
+            '.pkl', 'rb'))
 
-
-l,b = eq2gal(data['ra'], data['dec'])
+l, b = eq2gal(data['ra'], data['dec'])
 sinb = np.sin(np.radians(b))
-pix = hp.ang2pix(2, np.radians(90.-data['dec']), np.radians(data['ra']))
+pix = hp.ang2pix(2, np.radians(90. - data['dec']), np.radians(data['ra']))
 
 # Each data point has Npix dmax, vol and vmax
 dmax = np.zeros((len(data), len(par_err_spl)))
@@ -154,30 +159,28 @@ vmax = np.zeros((len(data), len(par_err_spl)))
 for i in range(len(data)):
     print(i)
     for j in range(len(par_err_spl)):
-        dmax[i,j] = minimize(find_d_limit, 50.,
-            args=(data['parallax'][i],
-                data['phot_g_mean_mag'][i],
-                par_err_spl[j][0],
-                10.,
-                5.,
-                20.3)
-            ).x
-        vol[i,j] = volume(1000./data['parallax'][i], sinb[i], 20., 250.) * 4. * np.pi
-        vmax[i,j] = volume(dmax[i,j], sinb[i], 20., 250.) * 4. * np.pi
+        dmax[i, j] = minimize(find_d_limit,
+                              50.,
+                              args=(data['parallax'][i],
+                                    data['phot_g_mean_mag'][i],
+                                    par_err_spl[j][0], 10., 5., 20.3)).x
+        vol[i, j] = volume(1000. / data['parallax'][i], sinb[i], 20.,
+                           250.) * 4. * np.pi
+        vmax[i, j] = volume(dmax[i, j], sinb[i], 20., 250.) * 4. * np.pi
 
 # G = 20.3 mag limit across the sky (temp)
 
 figure(2)
 clf()
-hist(np.sum(vol, axis=1)/np.sum(vmax, axis=1), bins=40, range=(0,1))
+hist(np.sum(vol, axis=1) / np.sum(vmax, axis=1), bins=40, range=(0, 1))
 xlabel('V/Vmax')
-xlim(0,1)
+xlim(0, 1)
 
-num, mag = np.histogram(
-    data['phot_g_mean_mag'] - np.log10(1000./data['parallax'])*5. + 5,
-    weights=48.*4./np.sum(vmax, axis=1),
-    bins=60,
-    range=(5,20))
+num, mag = np.histogram(data['phot_g_mean_mag'] -
+                        np.log10(1000. / data['parallax']) * 5. + 5,
+                        weights=48. * 4. / np.sum(vmax, axis=1),
+                        bins=60,
+                        range=(5, 20))
 mag = mag[1:] + 0.25
 
 figure(3)
@@ -191,4 +194,3 @@ ylim(-6.0, -2.5)
 grid()
 tight_layout()
 #savefig('gaia_wdlf.png')
-

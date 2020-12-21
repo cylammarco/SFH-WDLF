@@ -1,6 +1,6 @@
 import pickle
 import numpy as np
-import healpy.pixelfunc as hp
+import astropy_healpix as hp
 from scipy import interpolate as itp
 
 
