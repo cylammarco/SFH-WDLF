@@ -1,5 +1,19 @@
+from mpi4py import MPI
 import numpy as np
+import sys
 from WDPhotTools import theoretical_lf
+
+
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+my_rank = comm.Get_rank()
+
+if my_rank == 0:
+    sys.stdout.write("{} processes in total.".format(size))
+    sys.stdout.write("")
+
+sys.stdout.write("Rank {} started.".format(my_rank))
+sys.stdout.write("")
 
 wdlf = theoretical_lf.WDLF()
 
@@ -7,9 +21,14 @@ wdlf = theoretical_lf.WDLF()
 wdlf.compute_cooling_age_interpolator()
 
 Mag = np.arange(0.0, 20.0, 1.0)
-age_list = 1e9 * np.arange(0.1, 15.0, 0.1)
+age_list = np.array_split(1e9 * np.arange(0.1, 15.0, 0.1), size)[my_rank]
 
 for age in age_list:
+    sys.stdout.write(
+        "Currently computing {} Gyr population.".format(age / 1e9)
+    )
+    sys.stdout.write("")
+    sys.stdout.flush()
     wdlf.set_sfr_model(mode="burst", age=age, duration=1e8)
     # WDLF in Mbol
     wdlf.compute_density(
