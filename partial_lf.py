@@ -20,7 +20,7 @@ wdlf = theoretical_lf.WDLF()
 # Construct the interpolator
 wdlf.compute_cooling_age_interpolator()
 
-Mag = np.arange(0.0, 20.0, 1.0)
+Mag = np.arange(0.0, 20.0, 0.1)
 age_list = np.array_split(1e9 * np.arange(0.1, 15.0, 0.1), size)[my_rank]
 
 for age in age_list:

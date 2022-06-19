@@ -1,7 +1,9 @@
+import os
+
 import emcee
 import numpy as np
 from matplotlib import pyplot as plt
-from WDLFBuilder import theoretical_lf
+from WDPhotTools import theoretical_lf
 
 
 def log_prior(theta):
@@ -27,30 +29,41 @@ partial_wdlf = []
 age = np.arange(0.5, 10.0, 0.5)
 for i in age:
     filename1 = (
-        "{0:.2f}Gyr_burst_C16_C08_montreal_co_da_20".format(i)
-        + "_montreal_co_da_20_montreal_co_da_20.csv"
+        "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(i)
     )
     filename2 = (
-        "{0:.2f}Gyr_burst_C16_C08_montreal_co_da_20".format(i + 0.1)
-        + "_montreal_co_da_20_montreal_co_da_20.csv"
+        "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
+            i + 0.1
+        )
     )
     filename3 = (
-        "{0:.2f}Gyr_burst_C16_C08_montreal_co_da_20".format(i + 0.2)
-        + "_montreal_co_da_20_montreal_co_da_20.csv"
+        "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
+            i + 0.2
+        )
     )
     filename4 = (
-        "{0:.2f}Gyr_burst_C16_C08_montreal_co_da_20".format(i + 0.3)
-        + "_montreal_co_da_20_montreal_co_da_20.csv"
+        "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
+            i + 0.3
+        )
     )
     filename5 = (
-        "{0:.2f}Gyr_burst_C16_C08_montreal_co_da_20".format(i + 0.4)
-        + "_montreal_co_da_20_montreal_co_da_20.csv"
+        "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
+            i + 0.4
+        )
     )
-    n_temp = np.loadtxt(filename1, delimiter=",")[:, 1]
-    n_temp += np.loadtxt(filename2, delimiter=",")[:, 1]
-    n_temp += np.loadtxt(filename3, delimiter=",")[:, 1]
-    n_temp += np.loadtxt(filename4, delimiter=",")[:, 1]
-    n_temp += np.loadtxt(filename5, delimiter=",")[:, 1]
+    n_temp = np.loadtxt(os.path.join("output", filename1), delimiter=",")[:, 1]
+    n_temp += np.loadtxt(os.path.join("output", filename2), delimiter=",")[
+        :, 1
+    ]
+    n_temp += np.loadtxt(os.path.join("output", filename3), delimiter=",")[
+        :, 1
+    ]
+    n_temp += np.loadtxt(os.path.join("output", filename4), delimiter=",")[
+        :, 1
+    ]
+    n_temp += np.loadtxt(os.path.join("output", filename5), delimiter=",")[
+        :, 1
+    ]
     n_temp /= np.nansum(n_temp)
     partial_wdlf.append(n_temp.copy())
     n_temp = None
@@ -58,8 +71,7 @@ for i in age:
 partial_wdlf = np.array(partial_wdlf)
 # Get the magnitude
 mag = np.loadtxt(
-    "0.10Gyr_burst_C16_C08_montreal_co_da_20_montreal_co_da_20_"
-    + "montreal_co_da_20.csv",
+    os.path.join("output", filename1),
     delimiter=",",
 )[:, 0]
 
@@ -110,7 +122,7 @@ plt.grid()
 plt.xlabel("Lookback time / Gyr")
 plt.ylabel("Relative Star Formation Rate")
 plt.tight_layout()
-plt.savefig("two_bursts_sfh.png")
+plt.savefig(os.path.join("test_case", "two_bursts_sfh.png"))
 
 recomputed_wdlf = np.nansum(solution * np.array(partial_wdlf).T, axis=1)
 
@@ -121,11 +133,11 @@ plt.plot(mag, np.log10(recomputed_wdlf), label="Reconstructed WDLF")
 plt.xlabel(r"M${_\mathrm{bol}}$ / mag")
 plt.ylabel("log(arbitrary number density)")
 plt.xlim(0, 20)
-plt.ylim(-7.5, -1)
+plt.ylim(-5.5, 1)
 plt.legend()
 plt.grid()
 plt.tight_layout()
-plt.savefig("two_bursts_wdlf.png")
+plt.savefig(os.path.join("test_case", "two_bursts_wdlf.png"))
 
 # Decay SFH profile
 wdlf = theoretical_lf.WDLF()
@@ -175,7 +187,7 @@ plt.grid()
 plt.xlabel("Lookback time / Gyr")
 plt.ylabel("Relative Star Formation Rate")
 plt.tight_layout()
-plt.savefig("decay_sfh.png")
+plt.savefig(os.path.join("test_case", "decay_sfh.png"))
 
 recomputed_wdlf2 = np.nansum(sfh_solution2 * np.array(partial_wdlf).T, axis=1)
 
@@ -190,7 +202,7 @@ plt.ylim(-7, 0)
 plt.legend()
 plt.grid()
 plt.tight_layout()
-plt.savefig("decay_sfh_wdlf.png")
+plt.savefig(os.path.join("test_case", "decay_sfh_wdlf.png"))
 
 # Decay and a burst between 2 and 3 Gyr
 obs_wdlf3 = obs_wdlf2 + partial_wdlf[3] + partial_wdlf[4]
@@ -241,7 +253,7 @@ plt.grid()
 plt.xlabel("Lookback time / Gyr")
 plt.ylabel("Relative Star Formation Rate")
 plt.tight_layout()
-plt.savefig("decay_plus_burst_sfh.png")
+plt.savefig(os.path.join("test_case", "decay_plus_burst_sfh.png"))
 
 plt.figure(6)
 plt.clf()
@@ -254,6 +266,6 @@ plt.ylim(-7, 0)
 plt.legend()
 plt.grid()
 plt.tight_layout()
-plt.savefig("decay_plus_burst_sfh_wdlf.png")
+plt.savefig(os.path.join("test_case", "decay_plus_burst_sfh_wdlf.png"))
 
 plt.show()
