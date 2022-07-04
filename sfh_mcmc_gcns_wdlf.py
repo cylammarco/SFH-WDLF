@@ -8,7 +8,7 @@ from WDPhotTools import theoretical_lf
 
 
 def log_prior(theta):
-    if (theta <= 0.0).any():
+    if (theta < 0.0).any():
         return -np.inf
     else:
         return 0.0
@@ -26,8 +26,10 @@ def log_probability(rel_norm, obs, err, model_list):
 
 
 # Collect all the partial WDLFs, in chunks of 0.5 Gyr
+
+# Collect all the partial WDLFs, in chunks of 0.5 Gyr
 partial_wdlf = []
-age = np.arange(0.5, 10.0, 0.5)
+age = np.arange(0.5, 15.0, 0.5)
 for i in age:
     filename1 = (
         "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(i)
@@ -101,7 +103,7 @@ obs_wdlf_err = e_gen**0.5 / bin_size
 
 pwdlf_model = partial_wdlf[:, obs_wdlf > 0.0]
 
-nwalkers = 500
+nwalkers = 1000
 ndim = len(partial_wdlf)
 
 rel_norm = np.random.rand(nwalkers, ndim)
@@ -112,7 +114,7 @@ sampler = emcee.EnsembleSampler(
     log_probability,
     args=(obs_wdlf[obs_wdlf > 0.0], obs_wdlf_err[obs_wdlf > 0.0], pwdlf_model),
 )
-sampler.run_mcmc(rel_norm, 50000, progress=True)
+sampler.run_mcmc(rel_norm, 10000, progress=True)
 
 flat_samples = sampler.get_chain(discard=1000, thin=5, flat=True)
 
@@ -127,6 +129,9 @@ plt.clf()
 plt.step(age, solution, where="post", label="MCMC")
 plt.legend()
 plt.grid()
+plt.xticks(np.arange(0, 15, 2))
+plt.xlim(0, 15)
+plt.ylim(bottom=0)
 plt.xlabel("Lookback time / Gyr")
 plt.ylabel("Relative Star Formation Rate")
 plt.tight_layout()
@@ -151,8 +156,8 @@ plt.plot(
 )
 plt.xlabel(r"M${_\mathrm{bol}}$ / mag")
 plt.ylabel("log(arbitrary number density)")
-plt.xlim(5.0, 18.0)
-plt.ylim(1e-6, 5e-3)
+plt.xlim(0.0, 20.0)
+plt.ylim(1e-7, 5e-3)
 plt.yscale("log")
 plt.legend()
 plt.grid()
