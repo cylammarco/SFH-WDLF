@@ -26,11 +26,10 @@ def log_probability(rel_norm, obs, err, model_list):
 
 
 # Collect all the partial WDLFs, in chunks of 0.5 Gyr
-
-# Collect all the partial WDLFs, in chunks of 0.5 Gyr
 partial_wdlf = []
-age = np.arange(0.5, 15.0, 0.5)
+age = np.arange(0.0, 15.0, 0.5)
 for i in age:
+    i += 0.1
     filename1 = (
         "montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(i)
     )
@@ -163,3 +162,7 @@ plt.legend()
 plt.grid()
 plt.tight_layout()
 plt.savefig(os.path.join("test_case", "gcns_reconstructed_wdlf.png"))
+
+
+np.save(os.path.join("test_case", 'gcns_sfh.npy'), np.column_stack((age, solution)))
+np.save(os.path.join("test_case", 'gcns_reconstructed_wdlf.npy'), np.column_stack((mag, obs_wdlf, obs_wdlf_err)))
