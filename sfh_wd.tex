@@ -52,10 +52,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%% AUTHORS - PLACE YOUR OWN COMMANDS HERE %%%%%
+\usepackage{svg}
 
 % Please keep new commands to a minimum, and use \newcommand not \def to avoid
 % overwriting existing commands. Example:
 %\newcommand{\pcm}{\,cm$^{-2}$}	% per cm-squared
+\newcommand{\msun}{\mathcal{M}_{\sun}}
+\newcommand{\orcid}[1]{\href{https://orcid.org/#1}{\includesvg[width=10pt]{orcid}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -63,12 +66,12 @@
 
 % Title of the paper, and the short title which is used in the headers.
 % Keep the title short and informative.
-\title[Galactic Star Formation History from White Dwarfs]{Galactic Star Formation History -- the story told by White Dwarfs}
+\title[Galactic SFH from Gaia eDR3 WDLFs]{First Glimpse of the Galactic Star Formation History from the Gaia eDR3 White Dwarf Luminosity Functions}
 
 % The list of authors, and the short list which is used in the headers.
 % If you need two or more lines of authors, add an extra line using \newauthor
 \author[M. C. Lam et al.]{
-M. C. Lam$^{1}$\thanks{E-mail: lam@mail.tau.ac.il (MCL)}
+M. C. Lam$^{1\,\orcid{0000-0002-9347-2298}}$\thanks{Contact e-mail: \href{mailto:lam@tau.ac.il}{lam@tau.ac.il}}
 \\
 % List of institutions
 $^{1}$School of Physics and Astronomy, Tel Aviv University, Tel Aviv, Israel 69978
@@ -78,7 +81,7 @@ $^{1}$School of Physics and Astronomy, Tel Aviv University, Tel Aviv, Israel 699
 \date{Accepted XXX. Received YYY; in original form ZZZ}
 
 % Enter the current year, for the copyright statements etc.
-\pubyear{2015}
+\pubyear{2022}
 
 % Don't change these lines
 \begin{document}
@@ -179,7 +182,7 @@ stellar populations~\citep{2011MNRAS.417...93R, 2017ASPC..509...25L}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The mathematical construction of a WDLF is intuitively straightforward: stars
+The mathematical construction of a WDLF is straightforward: stars
 were formed in a distribution of mass~($\mathcal{M}_i$), described by the initial
 mass function~(IMF, $\phi$). Then, they spend their lifetime carrying out
 nuclear burning~($t_{\mathrm{MS}}$), and the time they spend depends mainly on
@@ -238,20 +241,91 @@ although there is evidence that more metal-rich stars lose more
 envelope~\citep{2007ApJ...671..761K}, there is insufficient empirical data to
 derive an IFMR at metallicity much lower or higher than solar abundance.
 
+\section{Retrieving Star Formation History from a WD population}
 
-\section{WDLF Inversion}
-With the inversion algorithm, it is possible to resolve the SFH in high time resolution (Rowell
-2013). However, it is prone to amplify noise into enhanced star formation upon the inversion
-(Tremblay et al. 2014). This is due to the large number of degenerate solutions that can
-yield the WDLF agree to within the uncertainty. I am trying to improve this method such that the
-goodness-of-fit will be performed over multiple photometric filters instead of a single bolometric
-magnitude. Methods without binning (e.g. with cumulative distribution function of luminosities
-in different filters) will also be investigated as these approaches can maximise the time resolution.
-Thanks to the collisional induced absorption of H2 which broadens the Ly- towards the
-optical from the ultraviolet upon cooling, the rates of change of luminosity are notably different
-at different wavelengths (See Fig. 1). The improved method can be tested against cluster WDLFs
-where the SFH is better known than the Galactic SFH.
+\citep{1990ApJ...352..605N}
+\citep{1992ApJ...386..539W}
+
+\subsection{Spectroscopic Volume Complete Sample}
+
+\citep{2014ApJ...791...92T}
+\citep{2019ApJ...878L..11I}
+
+
+\subsection{WDLF Inversion of a Statistical Sample}
+With the inversion algorithm, it is possible to resolve the SFH in high time resolution~\citep{2013MNRAS.434.1549R}. However, it is prone to amplify noise into enhanced star formation upon the inversion~\citep{2014ApJ...791...92T}. This is due to the large number of degenerate solutions that can
+yield the WDLF agree to within the uncertainty.
+
+
+\subsection{Forward modelling of WDLFs}
+
+
+
+\section{A New method}
+Historically, all the luminosity funtions of the solar neighbourhood were reported
+in the bolometric magnitudes. Essentially, all works were reporting the
+WD-Bolometric-LF. To address the problem of degeneracy in the solution, we explore
+the use of colour information from the luminosity function, where we are using
+the WDLF in multiple filters . 
+
+
+\subsection{Partial WDLFs}
+Inspired by the partial CMD designed in~\citep{2006A&A...459..783C}, we use partial WDLFs as building
+blocks of the fitting models.
+
+
+\subsection{Model Fitting}
+
+\subsubsection{Bolometric Luminosity/Magnitude}
+The likelihood function to be maximized is essentially minimising the $\chi^2$ between
+the observed and the measured WDLFs weighted by the variance.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{test_case/two_bursts_sfh_with_noise.png}
+    \caption{Caption}
+    \label{fig:two_bursts_with_noise}
+\end{figure}
+
+When the function is properly smoothed and weighted, the parametrisation with luminosity and magnitude should give identical results.
+
+
+\subsection{Effect of magnitude bin size}
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{test_case/two_bursts_sfh_compare_bin_size.png}
+    \caption{Caption}
+    \label{fig:two_burst_compare_bin}
+\end{figure}
+
+\subsection{Effect of time bin size}
+
+
+\subsection{Effect of choice of models}
+
+
+
+\section{Application to the early Gaia Data Release 3}
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{test_case/gcns_sfh.png}
+    \includegraphics[width=\columnwidth]{test_case/gcns_reconstructed_wdlf.png}
+    \caption{Caption}
+    \label{fig:gcns_mbol}
+\end{figure}
+
+
+
+\subsection{Comparison with WDLF inversions}
+
+
+
+\subsection{Comparison with previous studies}
+
+
+
 \section{Conclusions}
+
 
 
 \section*{Acknowledgements}
@@ -266,7 +340,7 @@ where the SFH is better known than the Galactic SFH.
 % The best way to enter references is to use BibTeX:
 
 \bibliographystyle{mnras}
-\bibliography{example} % if your bibtex file is called example.bib
+\bibliography{sfh_wd} % if your bibtex file is called example.bib
 
 
 % Alternatively you could enter them by hand, like this:
