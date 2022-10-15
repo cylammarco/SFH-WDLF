@@ -36,7 +36,7 @@ for age in age_list:
         normed=False,
         epsabs=1e-16,
         epsrel=1e-16,
-        n_points=10000,
+        n_points=100000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
             age / 1e9
@@ -58,7 +58,7 @@ for age in age_list:
         normed=False,
         epsabs=1e-16,
         epsrel=1e-16,
-        n_points=10000,
+        n_points=100000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3.csv".format(
             age / 1e9
@@ -80,7 +80,7 @@ for age in age_list:
         normed=False,
         epsabs=1e-16,
         epsrel=1e-16,
-        n_points=10000,
+        n_points=100000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_BP.csv".format(
             age / 1e9
@@ -102,7 +102,7 @@ for age in age_list:
         normed=False,
         epsabs=1e-16,
         epsrel=1e-16,
-        n_points=10000,
+        n_points=100000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_RP.csv".format(
             age / 1e9
