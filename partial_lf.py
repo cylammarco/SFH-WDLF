@@ -1,5 +1,6 @@
 from mpi4py import MPI
 import numpy as np
+import os
 import sys
 from WDPhotTools import theoretical_lf
 
@@ -20,23 +21,28 @@ wdlf = theoretical_lf.WDLF()
 # Construct the interpolator
 wdlf.compute_cooling_age_interpolator()
 
-Mag = np.arange(0.0, 20.0, 0.01)
-age_list = np.array_split(1e9 * np.arange(15.0, 15.1, 0.01), size)[my_rank]
+Mag = np.arange(0.0, 20.0, 0.1)
+age_list = np.array_split(1e9 * np.arange(0.01, 15.01, 0.01), size)[my_rank]
 
 for age in age_list:
+    if os.path.exists("montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
+            age / 1e9
+        )):
+        continue
     sys.stdout.write(
         "Currently computing {} Gyr population.".format(age / 1e9)
     )
     sys.stdout.write("")
     sys.stdout.flush()
-    wdlf.set_sfr_model(mode="burst", age=age, duration=1e8)
+    wdlf.set_sfr_model(mode="burst", age=age, duration=1e7)
     # WDLF in Mbol
     wdlf.compute_density(
         Mag=Mag,
         normed=False,
-        epsabs=1e-16,
-        epsrel=1e-16,
-        n_points=100000,
+        epsabs=1e-10,
+        epsrel=1e-10,
+        limit=1000000,
+        n_points=1000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_Mbol.csv".format(
             age / 1e9
@@ -56,9 +62,10 @@ for age in age_list:
         Mag=Mag,
         passband="G3",
         normed=False,
-        epsabs=1e-16,
-        epsrel=1e-16,
-        n_points=100000,
+        epsabs=1e-10,
+        epsrel=1e-10,
+        limit=1000000,
+        n_points=1000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3.csv".format(
             age / 1e9
@@ -78,9 +85,10 @@ for age in age_list:
         Mag=Mag,
         passband="G3_BP",
         normed=False,
-        epsabs=1e-16,
-        epsrel=1e-16,
-        n_points=100000,
+        epsabs=1e-10,
+        epsrel=1e-10,
+        limit=1000000,
+        n_points=1000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_BP.csv".format(
             age / 1e9
@@ -100,9 +108,10 @@ for age in age_list:
         Mag=Mag,
         passband="G3_RP",
         normed=False,
-        epsabs=1e-16,
-        epsrel=1e-16,
-        n_points=100000,
+        epsabs=1e-10,
+        epsrel=1e-10,
+        limit=1000000,
+        n_points=1000,
         folder="output",
         filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_RP.csv".format(
             age / 1e9
