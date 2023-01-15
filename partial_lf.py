@@ -22,19 +22,23 @@ wdlf = theoretical_lf.WDLF()
 wdlf.compute_cooling_age_interpolator()
 
 Mag = np.arange(0.0, 20.0, 0.1)
-age_list = np.array_split(1e9 * np.arange(0.01, 15.01, 0.01), size)[my_rank]
+age_list_1 = 1e9 * np.arange(0.001, 0.100, 0.001)
+age_list_2 = 1e9 * np.arange(0.100, 0.350, 0.005)
+age_list_3 = 1e9 * np.arange(0.350, 15.01, 0.01)
+# age_list = np.concatenate((age_list_1, age_list_2, age_list_3))
+age_list = np.concatenate((age_list_1, age_list_2))
 
-for age in age_list:
-    sys.stdout.write(
-        f"Currently computing {age / 1e9} Gyr population."
-    )
+age_list_per_rank = np.array_split(age_list, size)[my_rank]
+
+for age in age_list_per_rank:
+    sys.stdout.write(f"Currently computing {age / 1e9} Gyr population.")
     sys.stdout.write("")
     sys.stdout.flush()
     wdlf.set_sfr_model(mode="burst", age=age, duration=1e7)
     # WDLF in Mbol
     wdlf.compute_density(
         Mag,
-        interpolator='CT',
+        interpolator="CT",
         normed=False,
         epsabs=1e-10,
         epsrel=1e-10,
@@ -48,7 +52,7 @@ for age in age_list:
         display=False,
         savefig=True,
         folder="output",
-        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.2f}_Mbol.png"
+        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.2f}_Mbol.png",
     )
     """
     # WDLF in GDR3 G

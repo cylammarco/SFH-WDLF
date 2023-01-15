@@ -3,49 +3,57 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 
-file_extension = (
-    "_burst_C16_C08_montreal_co_da_20_montreal_co_da_20_"
-    + "montreal_co_da_20.csv"
-)
+file_body = "montreal_co_da_20_K01_PARSECz0014_C08_"
 
 data1 = np.loadtxt(
-    os.path.join("output", os.sep, "0.10Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.10_Mbol.csv"), delimiter=","
 )
+
 data2 = np.loadtxt(
-    os.path.join("output", os.sep, "0.20Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.20_Mbol.csv"), delimiter=","
 )
 data3 = np.loadtxt(
-    os.path.join("output", os.sep, "0.30Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.30_Mbol.csv"), delimiter=","
 )
+
 data4 = np.loadtxt(
-    os.path.join("output", os.sep, "0.40Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.40_Mbol.csv"), delimiter=","
 )
+
 data5 = np.loadtxt(
-    os.path.join("output", os.sep, "0.50Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.50_Mbol.csv"), delimiter=","
 )
+
 data6 = np.loadtxt(
-    os.path.join("output", os.sep, "0.60Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.60_Mbol.csv"), delimiter=","
 )
+
 data7 = np.loadtxt(
-    os.path.join("output", os.sep, "0.70Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.70_Mbol.csv"), delimiter=","
 )
+
 data8 = np.loadtxt(
-    os.path.join("output", os.sep, "0.80Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.80_Mbol.csv"), delimiter=","
 )
+
 data9 = np.loadtxt(
-    os.path.join("output", os.sep, "0.90Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "0.90_Mbol.csv"), delimiter=","
 )
+
 data10 = np.loadtxt(
-    os.path.join("output", os.sep, "1.00Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "1.00_Mbol.csv"), delimiter=","
 )
+
 data20 = np.loadtxt(
-    os.path.join("output", os.sep, "2.00Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "2.00_Mbol.csv"), delimiter=","
 )
+
 data50 = np.loadtxt(
-    os.path.join("output", os.sep, "5.00Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "5.00_Mbol.csv"), delimiter=","
 )
+
 data100 = np.loadtxt(
-    os.path.join("output", os.sep, "10.00Gyr" + file_extension, delimiter=",")
+    os.path.join("output", file_body + "10.00_Mbol.csv"), delimiter=","
 )
 
 plt.figure(1, figsize=(10, 6))
@@ -78,165 +86,68 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("burst_partial_wdlf.png")
 
-data21 = np.loadtxt(
-    os.path.join("output", os.sep, "2.10Gyr" + file_extension, delimiter=",")
-)
-data22 = np.loadtxt(
-    os.path.join("output", os.sep, "2.20Gyr" + file_extension, delimiter=",")
-)
-data23 = np.loadtxt(
-    os.path.join("output", os.sep, "2.30Gyr" + file_extension, delimiter=",")
-)
-data24 = np.loadtxt(
-    os.path.join("output", os.sep, "2.40Gyr" + file_extension, delimiter=",")
-)
-data25 = np.loadtxt(
-    os.path.join("output", os.sep, "2.50Gyr" + file_extension, delimiter=",")
-)
-data26 = np.loadtxt(
-    os.path.join("output", os.sep, "2.60Gyr" + file_extension, delimiter=",")
-)
-data27 = np.loadtxt(
-    os.path.join("output", os.sep, "2.70Gyr" + file_extension, delimiter=",")
-)
-data28 = np.loadtxt(
-    os.path.join("output", os.sep, "2.80Gyr" + file_extension, delimiter=",")
-)
-data29 = np.loadtxt(
-    os.path.join("output", os.sep, "2.90Gyr" + file_extension, delimiter=",")
-)
-data30 = np.loadtxt(
-    os.path.join("output", os.sep, "3.00Gyr" + file_extension, delimiter=",")
-)
 
-data41 = np.loadtxt(
-    os.path.join("output", os.sep, "4.10Gyr" + file_extension, delimiter=",")
-)
-data42 = np.loadtxt(
-    os.path.join("output", os.sep, "4.20Gyr" + file_extension, delimiter=",")
-)
-data43 = np.loadtxt(
-    os.path.join("output", os.sep, "4.30Gyr" + file_extension, delimiter=",")
-)
-data44 = np.loadtxt(
-    os.path.join("output", os.sep, "4.40Gyr" + file_extension, delimiter=",")
-)
-data45 = np.loadtxt(
-    os.path.join("output", os.sep, "4.50Gyr" + file_extension, delimiter=",")
-)
-data46 = np.loadtxt(
-    os.path.join("output", os.sep, "4.60Gyr" + file_extension, delimiter=",")
-)
-data47 = np.loadtxt(
-    os.path.join("output", os.sep, "4.70Gyr" + file_extension, delimiter=",")
-)
-data48 = np.loadtxt(
-    os.path.join("output", os.sep, "4.80Gyr" + file_extension, delimiter=",")
-)
-data49 = np.loadtxt(
-    os.path.join("output", os.sep, "4.90Gyr" + file_extension, delimiter=",")
-)
-data50 = np.loadtxt(
-    os.path.join("output", os.sep, "5.00Gyr" + file_extension, delimiter=",")
-)
+data_00_05 = np.zeros_like(data1[:, 1])
+for i in np.arange(0.01, 0.50, 0.01):
+    data_00_05 += np.loadtxt(
+        os.path.join("output", file_body + f"{i:.2f}_Mbol.csv"), delimiter=","
+    )[:, 1]
 
-data91 = np.loadtxt(
-    os.path.join("output", os.sep, "9.10Gyr" + file_extension, delimiter=",")
-)
-data92 = np.loadtxt(
-    os.path.join("output", os.sep, "9.20Gyr" + file_extension, delimiter=",")
-)
-data93 = np.loadtxt(
-    os.path.join("output", os.sep, "9.30Gyr" + file_extension, delimiter=",")
-)
-data94 = np.loadtxt(
-    os.path.join("output", os.sep, "9.40Gyr" + file_extension, delimiter=",")
-)
-data95 = np.loadtxt(
-    os.path.join("output", os.sep, "9.50Gyr" + file_extension, delimiter=",")
-)
-data96 = np.loadtxt(
-    os.path.join("output", os.sep, "9.60Gyr" + file_extension, delimiter=",")
-)
-data97 = np.loadtxt(
-    os.path.join("output", os.sep, "9.70Gyr" + file_extension, delimiter=",")
-)
-data98 = np.loadtxt(
-    os.path.join("output", os.sep, "9.80Gyr" + file_extension, delimiter=",")
-)
-data99 = np.loadtxt(
-    os.path.join("output", os.sep, "9.90Gyr" + file_extension, delimiter=",")
-)
-data100 = np.loadtxt(
-    os.path.join("output", os.sep, "10.00Gyr" + file_extension, delimiter=",")
-)
+data_05_10 = np.zeros_like(data1[:, 1])
+for i in np.arange(0.50, 1.00, 0.01):
+    data_05_10 += np.loadtxt(
+        os.path.join("output", file_body + f"{i:.2f}_Mbol.csv"), delimiter=","
+    )[:, 1]
+
+data_20_30 = np.zeros_like(data1[:, 1])
+for i in np.arange(2.01, 3.00, 0.01):
+    data_20_30 += np.loadtxt(
+        os.path.join("output", file_body + f"{i:.2f}_Mbol.csv"), delimiter=","
+    )[:, 1]
+
+data_40_50 = np.zeros_like(data1[:, 1])
+for i in np.arange(4.01, 5.00, 0.01):
+    data_40_50 += np.loadtxt(
+        os.path.join("output", file_body + f"{i:.2f}_Mbol.csv"), delimiter=","
+    )[:, 1]
+
+data_90_100 = np.zeros_like(data1[:, 1])
+for i in np.arange(9.01, 10.00, 0.01):
+    data_90_100 += np.loadtxt(
+        os.path.join("output", file_body + f"{i:.2f}_Mbol.csv"), delimiter=","
+    )[:, 1]
+
 
 plt.figure(2, figsize=(10, 6))
 plt.clf()
 plt.plot(
     data1[:, 0],
-    data1[:, 1] + data2[:, 1] + data3[:, 1] + data4[:, 1] + data5[:, 1],
+    data_00_05,
     label="0.0-0.5 Gyr",
 )
 plt.plot(
     data6[:, 0],
-    data6[:, 1] + data7[:, 1] + data8[:, 1] + data9[:, 1] + data10[:, 1],
+    data_05_10,
     label="0.5-1.0 Gyr",
 )
 plt.plot(
     data1[:, 0],
-    data1[:, 1]
-    + data2[:, 1]
-    + data3[:, 1]
-    + data4[:, 1]
-    + data5[:, 1]
-    + data6[:, 1]
-    + data7[:, 1]
-    + data8[:, 1]
-    + data9[:, 1]
-    + data10[:, 1],
+    data_00_05 + data_05_10,
     label="0.0-1.0 Gyr",
 )
 plt.plot(
     data1[:, 0],
-    data21[:, 1]
-    + data22[:, 1]
-    + data23[:, 1]
-    + data24[:, 1]
-    + data25[:, 1]
-    + data26[:, 1]
-    + data27[:, 1]
-    + data28[:, 1]
-    + data29[:, 1]
-    + data30[:, 1],
+    data_20_30,
     label="2.0-3.0 Gyr",
 )
 plt.plot(
     data1[:, 0],
-    data41[:, 1]
-    + data42[:, 1]
-    + data43[:, 1]
-    + data44[:, 1]
-    + data45[:, 1]
-    + data46[:, 1]
-    + data47[:, 1]
-    + data48[:, 1]
-    + data49[:, 1]
-    + data50[:, 1],
+    data_40_50,
     label="4.0-5.0 Gyr",
 )
 plt.plot(
     data1[:, 0],
-    data91[:, 1]
-    + data92[:, 1]
-    + data93[:, 1]
-    + data94[:, 1]
-    + data95[:, 1]
-    + data96[:, 1]
-    + data97[:, 1]
-    + data98[:, 1]
-    + data99[:, 1]
-    + data100[:, 1],
+    data_90_100,
     label="9.0-10.0 Gyr",
 )
 plt.yscale("log")
