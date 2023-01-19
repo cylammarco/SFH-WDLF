@@ -45,14 +45,14 @@ for age in age_list_per_rank:
         limit=1000000,
         n_points=10000,
         folder="output",
-        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.2f}_Mbol.csv",
+        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.3f}_Mbol.csv",
         save_csv=True,
     )
     wdlf.plot_wdlf(
         display=False,
         savefig=True,
         folder="output",
-        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.2f}_Mbol.png",
+        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.3f}_Mbol.png",
     )
     """
     # WDLF in GDR3 G
