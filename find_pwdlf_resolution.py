@@ -7,8 +7,26 @@ from scipy import interpolate
 
 
 data = []
-age = np.arange(0.01, 15.00, 0.01)
-for i in age:
+age_list_1 = np.arange(0.001, 0.100, 0.001)
+age_list_2 = np.arange(0.100, 0.350, 0.005)
+age_list_3 = np.arange(0.35, 15.01, 0.01)
+age_list_3dp = np.concatenate((age_list_1, age_list_2))
+age_list_2dp = age_list_3
+
+age = np.concatenate((age_list_3dp, age_list_2dp))
+
+for i in age_list_3dp:
+    data.append(
+        np.loadtxt(
+            os.path.join(
+                "output",
+                f"montreal_co_da_20_K01_PARSECz0014_C08_{i:.3f}_Mbol.csv",
+            ),
+            delimiter=",",
+        )
+    )
+
+for i in age_list_2dp:
     data.append(
         np.loadtxt(
             os.path.join(
@@ -33,21 +51,25 @@ mag_resolution_itp = interpolate.UnivariateSpline(
 
 
 plt.figure(1)
+plt.clf()
 plt.plot(age, mag_at_peak_density, label="Measured")
 plt.plot(age, mag_resolution_itp(age), label="Fitted")
 plt.xlabel("age")
 plt.ylabel("magnitude at peak density")
+plt.xscale('log')
 plt.savefig("age_peak_density.png")
 
 
 plt.figure(2)
+plt.clf()
 plt.plot(
-    age[31:],
-    mag_resolution_itp(age[31:]) - mag_resolution_itp(age[30:-1]),
+    age[1:],
+    mag_resolution_itp(age[1:]) - mag_resolution_itp(age[:-1]),
     label="Fitted",
 )
 plt.xlabel("age")
 plt.ylabel("magnitude resolution at peak density")
+plt.xscale('log')
 plt.savefig("age_peak_density_resolution.png")
 
 
@@ -62,14 +84,13 @@ stop = False
 for i, a in enumerate(age):
     if i < j:
         continue
-    print(i)
     start = mag_resolution_itp(a)
     end = start
     j = i
     carry_on = True
     while carry_on:
         tmp = mag_resolution_itp(age[j+1]) - mag_resolution_itp(age[j])
-        print(j, end, tmp, end+tmp)
+        print(j, end + tmp - start)
         if end + tmp - start < 0.0849257:
             end = end + tmp
             j += 1

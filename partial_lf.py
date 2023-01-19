@@ -25,23 +25,32 @@ Mag = np.arange(0.0, 20.0, 0.1)
 age_list_1 = 1e9 * np.arange(0.001, 0.100, 0.001)
 age_list_2 = 1e9 * np.arange(0.100, 0.350, 0.005)
 age_list_3 = 1e9 * np.arange(0.350, 15.01, 0.01)
-# age_list = np.concatenate((age_list_1, age_list_2, age_list_3))
-age_list = np.concatenate((age_list_1, age_list_2))
+
+age_list_1_bin_size = np.ones_like(age_list_1) * 1e9 * 0.001
+age_list_2_bin_size = np.ones_like(age_list_1) * 1e9 * 0.005
+age_list_3_bin_size = np.ones_like(age_list_1) * 1e9 * 0.01
+
+# age_list = np.concatenate((age_list_1_bin_size, age_list_2_bin_size, age_list_3_bin_size))
+age_list = np.concatenate((age_list_1_bin_size, age_list_2_bin_size))
+
+# age_list_bin_size = np.concatenate((age_list_1, age_list_2, age_list_3))
+age_list_bin_size = np.concatenate((age_list_1, age_list_2))
 
 age_list_per_rank = np.array_split(age_list, size)[my_rank]
+age_list_bin_size_per_rank = np.array_split(age_list_bin_size, size)[my_rank]
 
-for age in age_list_per_rank:
+for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
     sys.stdout.write(f"Currently computing {age / 1e9} Gyr population.")
     sys.stdout.write("")
     sys.stdout.flush()
-    wdlf.set_sfr_model(mode="burst", age=age, duration=1e7)
+    wdlf.set_sfr_model(mode="burst", age=age, duration=bin_size)
     # WDLF in Mbol
     wdlf.compute_density(
         Mag,
         interpolator="CT",
         normed=False,
-        epsabs=1e-10,
-        epsrel=1e-10,
+        epsabs=1e-12,
+        epsrel=1e-12,
         limit=1000000,
         n_points=10000,
         folder="output",
