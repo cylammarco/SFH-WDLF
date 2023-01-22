@@ -27,14 +27,14 @@ age_list_2 = 1e9 * np.arange(0.100, 0.350, 0.005)
 age_list_3 = 1e9 * np.arange(0.350, 15.01, 0.01)
 
 age_list_1_bin_size = np.ones_like(age_list_1) * 1e9 * 0.001
-age_list_2_bin_size = np.ones_like(age_list_1) * 1e9 * 0.005
-age_list_3_bin_size = np.ones_like(age_list_1) * 1e9 * 0.01
+age_list_2_bin_size = np.ones_like(age_list_2) * 1e9 * 0.005
+age_list_3_bin_size = np.ones_like(age_list_3) * 1e9 * 0.01
 
-# age_list = np.concatenate((age_list_1_bin_size, age_list_2_bin_size, age_list_3_bin_size))
-age_list = np.concatenate((age_list_1_bin_size, age_list_2_bin_size))
+# age_list = np.concatenate((age_list_1, age_list_2, age_list_3))
+age_list = np.concatenate((age_list_1, age_list_2))
 
-# age_list_bin_size = np.concatenate((age_list_1, age_list_2, age_list_3))
-age_list_bin_size = np.concatenate((age_list_1, age_list_2))
+# age_list_bin_size = np.concatenate((age_list_1_bin_size, age_list_2_bin_size, age_list_3_bin_size))
+age_list_bin_size = np.concatenate((age_list_1_bin_size, age_list_2_bin_size))
 
 age_list_per_rank = np.array_split(age_list, size)[my_rank]
 age_list_bin_size_per_rank = np.array_split(age_list_bin_size, size)[my_rank]
