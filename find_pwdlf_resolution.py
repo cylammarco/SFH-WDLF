@@ -94,7 +94,7 @@ for i, a in enumerate(age):
     while carry_on:
         tmp = mag_resolution_itp(age[j+1]) - mag_resolution_itp(age[j])
         print(j, end + tmp - start)
-        if end + tmp - start < 0.0849257:
+        if end + tmp - start < 0.2:
             end = end + tmp
             bin_02_pwdlf[j] = bin_number
             j += 1
@@ -126,7 +126,7 @@ for i, a in enumerate(age):
     carry_on = True
     while carry_on:
         tmp = mag_resolution_itp(age[j+1]) - mag_resolution_itp(age[j])
-        if end + tmp - start < 0.2123142:
+        if end + tmp - start < 0.5:
             end = end + tmp
             bin_05_pwdlf[j] = bin_number
             j += 1
@@ -146,8 +146,8 @@ resolution_02 = np.array(bin_02[1:]) - np.array(bin_02[:-1])
 resolution_05 = np.array(bin_05[1:]) - np.array(bin_05[:-1])
 
 plt.figure(3)
-plt.scatter(bin_02[:-1], resolution_02, label='0.0849257 mag bin', s=5)
-plt.scatter(bin_05[:-1], resolution_05, label='0.2123142 mag bin', s=5)
+plt.scatter(bin_02[:-1], resolution_02, label='0.2 mag bin', s=5)
+plt.scatter(bin_05[:-1], resolution_05, label='0.5 mag bin', s=5)
 plt.legend()
 plt.ylabel('magnitude resolution')
 plt.xlabel('magnitude')
