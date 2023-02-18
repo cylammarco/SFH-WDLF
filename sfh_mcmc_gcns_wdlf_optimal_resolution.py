@@ -152,7 +152,7 @@ plt.ylabel("Relative number density")
 pwdlf_model_02 = np.vstack(partial_wdlf_02)[:, obs_wdlf_02 > 0.0]
 pwdlf_model_05 = np.vstack(partial_wdlf_05)[:, obs_wdlf_05 > 0.0]
 
-nwalkers_02 = 1000
+nwalkers_02 = 2000
 nwalkers_05 = 500
 
 ndim_02 = len(partial_wdlf_02)
@@ -181,10 +181,10 @@ sampler_05 = emcee.EnsembleSampler(
         pwdlf_model_05,
     ),
 )
-sampler_02.run_mcmc(rel_norm_02, 20000, progress=True)
+sampler_02.run_mcmc(rel_norm_02, 50000, progress=True)
 sampler_05.run_mcmc(rel_norm_05, 2000, progress=True)
 
-flat_samples_02 = sampler_02.get_chain(discard=1000, thin=5, flat=True)
+flat_samples_02 = sampler_02.get_chain(discard=5000, thin=5, flat=True)
 flat_samples_05 = sampler_05.get_chain(discard=500, thin=5, flat=True)
 
 solution_02 = np.zeros(ndim_02)
