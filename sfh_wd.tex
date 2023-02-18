@@ -66,7 +66,7 @@
 
 % Title of the paper, and the short title which is used in the headers.
 % Keep the title short and informative.
-\title[Galactic SFH from Gaia eDR3 WDLFs]{The Galactic Star Formation History from the Gaia eDR3 White Dwarf Luminosity Functions}
+\title[Galactic SFH from Gaia eDR3 WDLFs]{First Glimpse of the Galactic Star Formation History from the Gaia eDR3 White Dwarf Luminosity Functions}
 
 % The list of authors, and the short list which is used in the headers.
 % If you need two or more lines of authors, add an extra line using \newauthor
@@ -182,7 +182,7 @@ stellar populations~\citep{2011MNRAS.417...93R, 2017ASPC..509...25L}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The mathematical construction of a WDLF is intuitively straightforward: stars
+The mathematical construction of a WDLF is straightforward: stars
 were formed in a distribution of mass~($\mathcal{M}_i$), described by the initial
 mass function~(IMF, $\phi$). Then, they spend their lifetime carrying out
 nuclear burning~($t_{\mathrm{MS}}$), and the time they spend depends mainly on
@@ -241,9 +241,16 @@ although there is evidence that more metal-rich stars lose more
 envelope~\citep{2007ApJ...671..761K}, there is insufficient empirical data to
 derive an IFMR at metallicity much lower or higher than solar abundance.
 
-\section{Retrieving Star Formation History}
+\section{Retrieving Star Formation History from a WD population}
+
+\citep{1990ApJ...352..605N}
+\citep{1992ApJ...386..539W}
 
 \subsection{Spectroscopic Volume Complete Sample}
+
+\citep{2014ApJ...791...92T}
+\citep{2019ApJ...878L..11I}
+
 
 \subsection{WDLF Inversion of a Statistical Sample}
 With the inversion algorithm, it is possible to resolve the SFH in high time resolution~\citep{2013MNRAS.434.1549R}. However, it is prone to amplify noise into enhanced star formation upon the inversion~\citep{2014ApJ...791...92T}. This is due to the large number of degenerate solutions that can
@@ -269,7 +276,7 @@ blocks of the fitting models.
 
 \subsection{Model Fitting}
 
-\subsubsection{Bolometric Luminosity}
+\subsubsection{Bolometric Luminosity/Magnitude}
 The likelihood function to be maximized is essentially minimising the $\chi^2$ between
 the observed and the measured WDLFs weighted by the variance.
 
@@ -280,8 +287,7 @@ the observed and the measured WDLFs weighted by the variance.
     \label{fig:two_bursts_with_noise}
 \end{figure}
 
-\subsubsection{Multi-band Luminosity}
-
+When the function is properly smoothed and weighted, the parametrisation with luminosity and magnitude should give identical results.
 
 
 \subsection{Effect of magnitude bin size}
