@@ -21,3 +21,23 @@ xlim(5.0, 18.0)
 ylim(1e-6, 5e-3)
 grid()
 tight_layout()
+
+
+# The Mobl-uncertainty in the catalogue is coming only from the parallax.
+# The Mobl is based on a simple single-band (G) look-up table.
+
+sigma = []
+Mbol = []
+for ID in set(data['sourceID']):
+    mask = data['sourceID'] == ID
+    if len(np.nonzero(mask)[0]) == 99:
+        mbol = data[mask]['Mbol']
+        sigma.append(np.ptp(mbol) / 6.0)
+        Mbol.append(np.mean(mbol))
+
+
+figure(2, figsize=(8,6))
+clf()
+scatter(Mbol, sigma, s=1)
+
+

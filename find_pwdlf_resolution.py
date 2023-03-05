@@ -50,17 +50,18 @@ mag_resolution_itp = interpolate.UnivariateSpline(
 )
 
 
-plt.figure(1)
+plt.figure(1, figsize=(8, 6))
 plt.clf()
 plt.plot(age, mag_at_peak_density, label="Measured")
 plt.plot(age, mag_resolution_itp(age), label="Fitted")
 plt.xlabel("age")
 plt.ylabel("magnitude at peak density")
 plt.xscale('log')
+plt.tight_layout()
 plt.savefig("age_peak_density.png")
 
 
-plt.figure(2)
+plt.figure(2, figsize=(8, 6))
 plt.clf()
 plt.plot(
     age[1:],
@@ -70,6 +71,7 @@ plt.plot(
 plt.xlabel("age")
 plt.ylabel("magnitude resolution at peak density")
 plt.xscale('log')
+plt.tight_layout()
 plt.savefig("age_peak_density_resolution.png")
 
 
@@ -145,12 +147,13 @@ for i, a in enumerate(age):
 resolution_02 = np.array(bin_02[1:]) - np.array(bin_02[:-1])
 resolution_05 = np.array(bin_05[1:]) - np.array(bin_05[:-1])
 
-plt.figure(3)
+plt.figure(3, figsize=(8, 6))
 plt.scatter(bin_02[:-1], resolution_02, label='0.2 mag bin', s=5)
 plt.scatter(bin_05[:-1], resolution_05, label='0.5 mag bin', s=5)
 plt.legend()
 plt.ylabel('magnitude resolution')
 plt.xlabel('magnitude')
+plt.tight_layout()
 plt.savefig('magnitude_resoltuion.png')
 
 

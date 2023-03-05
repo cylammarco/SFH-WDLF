@@ -6,7 +6,7 @@
   (generated)
   "sfh_wd.bbl"
   "sfh_wd.blg"
-["pdflatex"] 1676762825 "c:/Users/cylam/git/SFH-WDLF/sfh_wd.tex" "sfh_wd.pdf" "sfh_wd" 1676762825
+["pdflatex"] 1676763999 "c:/Users/cylam/git/SFH-WDLF/sfh_wd.tex" "sfh_wd.pdf" "sfh_wd" 1676763999
   "c:/Users/cylam/git/SFH-WDLF/sfh_wd.tex" 1676762813 16075 79eba59a7fd913e481fa85e347168607 ""
   "c:/texlive/2021/texmf-dist/fonts/enc/dvips/newtx/ntx-ec-tlf.enc" 1647202505 2914 8283dfc24eaf1964346f843d7605c2b0 ""
   "c:/texlive/2021/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf.enc" 1647202505 2083 60e36f8eac802fcaf19eabe2633b406e ""
@@ -175,7 +175,7 @@
   "c:/texlive/2021/texmf-var/web2c/pdftex/pdflatex.fmt" 1647207475 2797707 063b3011f92b7d255de3691acbaaee14 ""
   "c:/texlive/2021/texmf.cnf" 1647207355 713 e69b156964470283e0530f5060668171 ""
   "orcid.svg" 1656948375 2036 83137b187f04fc0c2505a7d67e0168ea ""
-  "sfh_wd.aux" 1676762825 34 3985256e7290058c681f74d7a3565a19 "pdflatex"
+  "sfh_wd.aux" 1676763999 34 3985256e7290058c681f74d7a3565a19 "pdflatex"
   "sfh_wd.bbl" 0 -1 0 "bibtex sfh_wd"
   "sfh_wd.out" 0 -1 0 "pdflatex"
   "sfh_wd.tex" 1676762813 16075 79eba59a7fd913e481fa85e347168607 ""
