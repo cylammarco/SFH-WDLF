@@ -1,35 +1,16 @@
 import os
 
-import emcee
 from matplotlib import pyplot as plt
 import numpy as np
 from spectres import spectres
-from WDPhotTools import theoretical_lf
 
 
-def log_prior(theta):
-    if (theta < 0.0).any():
-        return -np.inf
-    else:
-        return 0.0
-
-
-def log_probability(rel_norm, obs, err, model_list):
-    rel_norm /= np.sum(rel_norm)
-    if not np.isfinite(log_prior(rel_norm)):
-        return -np.inf
-    model = np.nansum(rel_norm[:, None] * model_list, axis=0)
-    model /= np.nansum(model)
-    obs /= np.nansum(obs)
-    log_likelihood = -np.nansum(((model - obs) / err) ** 2.0)
-    return log_likelihood
-
+figure_folder = "SFH-WDLF-article/figures"
 
 # Load the GCNS data
 gcns_wdlf = np.load(
     "pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz"
 )["data"]
-
 n_bin_optimal = 32
 
 h_gen_optimal, b_optimal = np.histogram(
@@ -38,7 +19,6 @@ h_gen_optimal, b_optimal = np.histogram(
     range=(2.25, 18.25),
     weights=0.01 / gcns_wdlf["Vgen"],
 )
-
 e_gen_optimal, _ = np.histogram(
     gcns_wdlf["Mbol"],
     bins=n_bin_optimal,
@@ -51,6 +31,7 @@ bin_size_optimal = b_optimal[1] - b_optimal[0]
 mag_obs_optimal = np.around(b_optimal[1:] - 0.5 * bin_size_optimal, 2)
 obs_wdlf_optimal = h_gen_optimal / bin_size_optimal
 obs_wdlf_err_optimal = e_gen_optimal**0.5 / bin_size_optimal
+
 
 # Load the pwdlfs
 data = []
@@ -87,11 +68,17 @@ for i in age_list_2dp:
 
 mag_pwdlf = data[0][:, 0]
 
+
+partial_age_optimal, solution_optimal = np.load(
+    "gcns_sfh_optimal_resolution_bin_optimal.npy"
+).T
+mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal = np.load(
+    "gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
+).T
 # Load the mapped pwdlf age-mag resolution
 pwdlf_mapping_bin_optimal = np.insert(np.load("pwdlf_bin_optimal_mapping.npy"), 0, 0)
 
 # Stack up the pwdlfs to the desired resolution
-
 partial_wdlf_optimal = []
 partial_age_optimal = []
 for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
@@ -106,38 +93,54 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_age_optimal.append(age_temp / age_count)
 
 
-pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
-
-nwalkers_optimal = 500
-
-ndim_optimal = len(partial_wdlf_optimal)
-
-rel_norm_optimal = np.random.rand(nwalkers_optimal, ndim_optimal)
-
-sampler_optimal = emcee.EnsembleSampler(
-    nwalkers_optimal,
-    ndim_optimal,
-    log_probability,
-    args=(
-        obs_wdlf_optimal[obs_wdlf_optimal > 0.0],
-        obs_wdlf_err_optimal[obs_wdlf_optimal > 0.0],
-        pwdlf_model_optimal,
-    ),
+recomputed_wdlf_optimal = np.nansum(
+    solution_optimal * np.array(partial_wdlf_optimal).T, axis=1
 )
-sampler_optimal.run_mcmc(rel_norm_optimal, 10000, progress=True)
 
-flat_samples_optimal = sampler_optimal.get_chain(discard=500, thin=5, flat=True)
 
-solution_optimal = np.zeros(ndim_optimal)
-for i in range(ndim_optimal):
-    solution_optimal[i] = np.percentile(flat_samples_optimal[:, i], [50.0])
-
-solution_optimal /= np.nansum(solution_optimal)
-
-np.save("gcns_sfh_optimal_resolution_bin_optimal.npy",
-    np.column_stack((partial_age_optimal, solution_optimal)),
+fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
+    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(8, 1, 5)
 )
-np.save(
-    "gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy",
-    np.column_stack((mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal)),
+
+ax_dummy1.axis("off")
+ax1.errorbar(
+    mag_obs_optimal,
+    obs_wdlf_optimal,
+    yerr=[obs_wdlf_err_optimal, obs_wdlf_err_optimal],
+    fmt="+",
+    markersize=5,
+    label="Input WDLF",
+)
+ax1.plot(
+    mag_obs_optimal,
+    recomputed_wdlf_optimal
+    / np.nansum(recomputed_wdlf_optimal)
+    * np.nansum(obs_wdlf_optimal),
+    label="Reconstructed WDLF",
+)
+ax1.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
+ax1.set_ylabel("log(arbitrary number density)")
+ax1.set_xlim(2.0, 18.0)
+ax1.set_ylim(1e-7, 5e-3)
+ax1.set_yscale("log")
+ax1.legend()
+ax1.grid()
+
+ax2.step(partial_age_optimal, solution_optimal, where="post")
+ax2.grid()
+ax2.set_xticks(np.arange(0, 15, 2))
+ax2.set_xlim(0, 15)
+ax2.set_ylim(bottom=0)
+ax2.set_xlabel("Lookback time / Gyr")
+ax2.set_ylabel("Relative Star Formation Rate")
+
+plt.subplots_adjust(
+    top=0.975, bottom=0.05, left=0.09, right=0.975, hspace=0.075
+)
+
+fig1.savefig(
+    os.path.join(
+        figure_folder,
+        "fig_05_gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.png",
+    )
 )
