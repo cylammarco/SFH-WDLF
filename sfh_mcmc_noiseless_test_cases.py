@@ -111,7 +111,7 @@ wdlf.compute_density(mag_pwdlf)
 
 mag_at_peak_density = np.zeros_like(age)
 for i, d in enumerate(data):
-    mag_at_peak_density[i] = mag_pwdlf[np.argmax(d[:, 1])//5]
+    mag_at_peak_density[i] = mag_pwdlf[np.argmax(d[:, 1][::5])]
 
 
 mag_resolution_itp = interpolate.UnivariateSpline(
