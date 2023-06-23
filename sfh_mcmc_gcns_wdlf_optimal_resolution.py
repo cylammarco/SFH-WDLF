@@ -108,7 +108,7 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
 
 pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
 
-nwalkers_optimal = 500
+nwalkers_optimal = 1000
 
 ndim_optimal = len(partial_wdlf_optimal)
 
@@ -124,7 +124,7 @@ sampler_optimal = emcee.EnsembleSampler(
         pwdlf_model_optimal,
     ),
 )
-sampler_optimal.run_mcmc(rel_norm_optimal, 50000, progress=True)
+sampler_optimal.run_mcmc(rel_norm_optimal, 200000, progress=True)
 
 flat_samples_optimal = sampler_optimal.get_chain(discard=2000, thin=5, flat=True)
 
