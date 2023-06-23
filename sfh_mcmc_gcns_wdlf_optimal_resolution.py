@@ -124,9 +124,9 @@ sampler_optimal = emcee.EnsembleSampler(
         pwdlf_model_optimal,
     ),
 )
-sampler_optimal.run_mcmc(rel_norm_optimal, 10000, progress=True)
+sampler_optimal.run_mcmc(rel_norm_optimal, 50000, progress=True)
 
-flat_samples_optimal = sampler_optimal.get_chain(discard=500, thin=5, flat=True)
+flat_samples_optimal = sampler_optimal.get_chain(discard=2000, thin=5, flat=True)
 
 solution_optimal = np.zeros(ndim_optimal)
 for i in range(ndim_optimal):

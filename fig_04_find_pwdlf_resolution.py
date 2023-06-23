@@ -73,7 +73,7 @@ ax2.set_xscale('log')
 
 """
 # Load the "resolution" of the Mbol solution
-mbol_sigma = interpolate.UnivariateSpline(*np.load('mbol_sigma.npy').T, s=0)
+mbol_err_upper_bound = interpolate.UnivariateSpline(*np.load('mbol_err_upper_bound.npy').T, s=0)
 
 
 # Nyquist sampling for resolving 2 gaussian peaks -> 2.355 sigma.
@@ -96,7 +96,7 @@ for i, a in enumerate(age):
     while carry_on:
         tmp = mag_resolution_itp(age[j+1]) - mag_resolution_itp(age[j])
         print(j, end + tmp - start)
-        if end + tmp - start < mbol_sigma(end):
+        if end + tmp - start < mbol_err_upper_bound(end):
             end = end + tmp
             bin_optimal_pwdlf[j] = bin_number
             j += 1
@@ -120,7 +120,7 @@ ax3.set_ylabel('magnitude resolution')
 ax3.set_xlabel(r'M$_{\mathrm{bol}}$ [mag]')
 
 
-plt.subplots_adjust(top=0.99, bottom=0.05, left=0.08, right=0.99, hspace=0.0)
+plt.subplots_adjust(top=0.99, bottom=0.075, left=0.125, right=0.99, hspace=0.0)
 
 fig.savefig(os.path.join(figure_folder, 'fig_04_magnitude_resoltuion.png'))
 
