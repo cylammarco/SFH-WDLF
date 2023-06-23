@@ -30,27 +30,36 @@ gcns_wdlf = np.load(
     "pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz"
 )["data"]
 
-n_bin_optimal = 32
+# n_bin_optimal = 32
+
+# Load the mapped pwdlf age-mag resolution
+pwdlf_mapping_bin_optimal = np.insert(
+    np.load("pwdlf_bin_optimal_mapping.npy"), 0, 0
+)
+mag_obs_optimal, resolution_optimal = np.load("mbol_resolution.npy").T
+
+mag_obs_optimal_bin_edges = np.append(
+    mag_obs_optimal - resolution_optimal * 0.5,
+    mag_obs_optimal[-1] + resolution_optimal[-1] * 0.5,
+)
 
 h_gen_optimal, b_optimal = np.histogram(
     gcns_wdlf["Mbol"],
-    bins=n_bin_optimal,
+    bins=mag_obs_optimal_bin_edges,
     range=(2.25, 18.25),
     weights=0.01 / gcns_wdlf["Vgen"],
 )
 
 e_gen_optimal, _ = np.histogram(
     gcns_wdlf["Mbol"],
-    bins=n_bin_optimal,
+    bins=mag_obs_optimal_bin_edges,
     range=(2.25, 18.25),
     weights=0.01 / gcns_wdlf["Vgen"] ** 2.0,
 )
 
-bin_size_optimal = b_optimal[1] - b_optimal[0]
+obs_wdlf_optimal = h_gen_optimal / resolution_optimal
+obs_wdlf_err_optimal = e_gen_optimal**0.5 / resolution_optimal
 
-mag_obs_optimal = np.around(b_optimal[1:] - 0.5 * bin_size_optimal, 2)
-obs_wdlf_optimal = h_gen_optimal / bin_size_optimal
-obs_wdlf_err_optimal = e_gen_optimal**0.5 / bin_size_optimal
 
 # Load the pwdlfs
 data = []
@@ -87,8 +96,6 @@ for i in age_list_2dp:
 
 mag_pwdlf = data[0][:, 0]
 
-# Load the mapped pwdlf age-mag resolution
-pwdlf_mapping_bin_optimal = np.insert(np.load("pwdlf_bin_optimal_mapping.npy"), 0, 0)
 
 # Stack up the pwdlfs to the desired resolution
 
@@ -99,14 +106,18 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     age_temp = 0.0
     age_count = 0
     for i in np.where(pwdlf_mapping_bin_optimal == idx)[0]:
-        pwdlf_temp += spectres(mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0)
+        pwdlf_temp += spectres(
+            mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0
+        )
         age_temp += age[i]
         age_count += 1
     partial_wdlf_optimal.append(pwdlf_temp)
     partial_age_optimal.append(age_temp / age_count)
 
 
-pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
+pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[
+    :, obs_wdlf_optimal > 0.0
+]
 
 nwalkers_optimal = 1000
 
@@ -126,7 +137,9 @@ sampler_optimal = emcee.EnsembleSampler(
 )
 sampler_optimal.run_mcmc(rel_norm_optimal, 200000, progress=True)
 
-flat_samples_optimal = sampler_optimal.get_chain(discard=2000, thin=5, flat=True)
+flat_samples_optimal = sampler_optimal.get_chain(
+    discard=5000, flat=True
+)
 
 solution_optimal = np.zeros(ndim_optimal)
 for i in range(ndim_optimal):
@@ -134,7 +147,8 @@ for i in range(ndim_optimal):
 
 solution_optimal /= np.nansum(solution_optimal)
 
-np.save("gcns_sfh_optimal_resolution_bin_optimal.npy",
+np.save(
+    "gcns_sfh_optimal_resolution_bin_optimal.npy",
     np.column_stack((partial_age_optimal, solution_optimal)),
 )
 np.save(

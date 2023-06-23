@@ -51,16 +51,20 @@ mag_resolution_itp = interpolate.UnivariateSpline(
 )
 
 
-fig, (ax1, ax_dummy, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(8, 9), height_ratios=(5,1,5))
+fig, (ax1, ax_dummy, ax3) = plt.subplots(
+    nrows=3, ncols=1, figsize=(8, 9), height_ratios=(5, 1, 5)
+)
 
-ax_dummy.axis('off')
+ax_dummy.axis("off")
 
 ax1.scatter(age, mag_at_peak_density, s=2, label="Measured")
-ax1.plot(age, mag_resolution_itp(age), color='black', ls="dashed", label="Fitted")
+ax1.plot(
+    age, mag_resolution_itp(age), color="black", ls="dashed", label="Fitted"
+)
 ax1.legend()
 ax1.set_ylabel("magnitude at peak density")
 ax1.set_xlabel("log(age) (Gyr)")
-ax1.set_xscale('log')
+ax1.set_xscale("log")
 
 """
 ax2.plot(
@@ -73,7 +77,9 @@ ax2.set_xscale('log')
 
 """
 # Load the "resolution" of the Mbol solution
-mbol_err_upper_bound = interpolate.UnivariateSpline(*np.load('mbol_err_upper_bound.npy').T, s=0)
+mbol_err_upper_bound = interpolate.UnivariateSpline(
+    *np.load("mbol_err_upper_bound.npy").T, s=0
+)
 
 
 # Nyquist sampling for resolving 2 gaussian peaks -> 2.355 sigma.
@@ -81,7 +87,7 @@ mbol_err_upper_bound = interpolate.UnivariateSpline(*np.load('mbol_err_upper_bou
 bin_optimal = []
 bin_optimal_idx = []
 # to group the constituent pwdlfs into the optimal set of pwdlfs
-bin_optimal_pwdlf = np.zeros_like(age[1:]).astype('int')
+bin_optimal_pwdlf = np.zeros_like(age[1:]).astype("int")
 j = 0
 bin_number = 0
 stop = False
@@ -94,7 +100,7 @@ for i, a in enumerate(age):
     j = i
     carry_on = True
     while carry_on:
-        tmp = mag_resolution_itp(age[j+1]) - mag_resolution_itp(age[j])
+        tmp = mag_resolution_itp(age[j + 1]) - mag_resolution_itp(age[j])
         print(j, end + tmp - start)
         if end + tmp - start < mbol_err_upper_bound(end):
             end = end + tmp
@@ -115,15 +121,24 @@ for i, a in enumerate(age):
 resolution_optimal = np.diff(bin_optimal)
 bin_center = bin_optimal[:-1] + resolution_optimal / 2.0
 
-ax3.bar(bin_center, height=resolution_optimal, width = resolution_optimal, color='white', edgecolor='black')
-ax3.set_ylabel('magnitude resolution')
-ax3.set_xlabel(r'M$_{\mathrm{bol}}$ [mag]')
+ax3.bar(
+    bin_center,
+    height=resolution_optimal,
+    width=resolution_optimal,
+    color="white",
+    edgecolor="black",
+)
+ax3.set_ylabel("magnitude resolution")
+ax3.set_xlabel(r"M$_{\mathrm{bol}}$ [mag]")
 
 
 plt.subplots_adjust(top=0.99, bottom=0.075, left=0.125, right=0.99, hspace=0.0)
 
-fig.savefig(os.path.join(figure_folder, 'fig_04_magnitude_resoltuion.png'))
+fig.savefig(os.path.join(figure_folder, "fig_04_magnitude_resoltuion.png"))
 
 
 # save the pdwdlf mapping
-np.save('pwdlf_bin_optimal_mapping.npy', bin_optimal_pwdlf)
+np.save("pwdlf_bin_optimal_mapping.npy", bin_optimal_pwdlf)
+
+# save the Mbol resolution
+np.save("mbol_resolution.npy", np.column_stack((bin_center, resolution_optimal)))

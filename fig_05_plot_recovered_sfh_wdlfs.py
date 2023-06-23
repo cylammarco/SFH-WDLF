@@ -11,27 +11,6 @@ figure_folder = "SFH-WDLF-article/figures"
 gcns_wdlf = np.load(
     "pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz"
 )["data"]
-n_bin_optimal = 32
-
-h_gen_optimal, b_optimal = np.histogram(
-    gcns_wdlf["Mbol"],
-    bins=n_bin_optimal,
-    range=(2.25, 18.25),
-    weights=0.01 / gcns_wdlf["Vgen"],
-)
-e_gen_optimal, _ = np.histogram(
-    gcns_wdlf["Mbol"],
-    bins=n_bin_optimal,
-    range=(2.25, 18.25),
-    weights=0.01 / gcns_wdlf["Vgen"] ** 2.0,
-)
-
-bin_size_optimal = b_optimal[1] - b_optimal[0]
-
-mag_obs_optimal = np.around(b_optimal[1:] - 0.5 * bin_size_optimal, 2)
-obs_wdlf_optimal = h_gen_optimal / bin_size_optimal
-obs_wdlf_err_optimal = e_gen_optimal**0.5 / bin_size_optimal
-
 
 # Load the pwdlfs
 data = []
@@ -72,6 +51,8 @@ mag_pwdlf = data[0][:, 0]
 partial_age_optimal, solution_optimal = np.load(
     "gcns_sfh_optimal_resolution_bin_optimal.npy"
 ).T
+
+# from running sfh_mcmc_gcns_wdlf_optimal_resolution.py
 mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal = np.load(
     "gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
 ).T
@@ -120,7 +101,7 @@ ax1.plot(
 )
 ax1.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
 ax1.set_ylabel("log(arbitrary number density)")
-ax1.set_xlim(2.0, 18.0)
+ax1.set_xlim(6.0, 18.5)
 ax1.set_ylim(1e-7, 5e-3)
 ax1.set_yscale("log")
 ax1.legend()

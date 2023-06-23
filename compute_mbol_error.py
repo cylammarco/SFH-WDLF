@@ -9,6 +9,7 @@ from WDPhotTools.fitter import WDfitter
 
 from scipy.interpolate import splrep, splev
 
+
 def get_envelope_v1(x, y):
     x_list, y_list = list(x), list(y)
     assert len(x_list) == len(y_list)
@@ -16,27 +17,27 @@ def get_envelope_v1(x, y):
     ui, ux, uy = [0], [x_list[0]], [y_list[0]]
     li, lx, ly = [0], [x_list[0]], [y_list[0]]
     # Find upper peaks and lower peaks
-    for i in range(1, len(x_list)-1):
-        if y_list[i] >= y_list[i-1] and y_list[i] >= y_list[i+1]:
+    for i in range(1, len(x_list) - 1):
+        if y_list[i] >= y_list[i - 1] and y_list[i] >= y_list[i + 1]:
             ui.append(i)
             ux.append(x_list[i])
             uy.append(y_list[i])
-        if y_list[i] <= y_list[i-1] and y_list[i] <= y_list[i+1]:
+        if y_list[i] <= y_list[i - 1] and y_list[i] <= y_list[i + 1]:
             li.append(i)
             lx.append(x_list[i])
             ly.append(y_list[i])
     # Last data
-    ui.append(len(x_list)-1)
+    ui.append(len(x_list) - 1)
     ux.append(x_list[-1])
     uy.append(y_list[-1])
-    li.append(len(y_list)-1)
+    li.append(len(y_list) - 1)
     lx.append(x_list[-1])
-    ly.append(y_list[-1])  
+    ly.append(y_list[-1])
     if len(ux) == 2 or len(lx) == 2:
         return [], []
     else:
-        func_ub = interp1d(ux, uy, kind='cubic', bounds_error=False)
-        func_lb = interp1d(lx, ly, kind='cubic', bounds_error=False)
+        func_ub = interp1d(ux, uy, kind="cubic", bounds_error=False)
+        func_lb = interp1d(lx, ly, kind="cubic", bounds_error=False)
         ub, lb = [], []
         for i in x_list:
             ub = func_ub(x_list)
@@ -44,7 +45,6 @@ def get_envelope_v1(x, y):
         ub = np.array([y, ub]).max(axis=0)
         lb = np.array([y, lb]).min(axis=0)
         return ub, lb
-
 
 
 figure_folder = "SFH-WDLF-article/figures"
@@ -72,14 +72,12 @@ distance_err = (
 ) / 2
 
 gcns_Mbol = gcns_wd["Mbol"]
-gcns_vmax = gcns_wd["Vgen"]
 
 Mbol_err = {}
 Mbol_initial = {}
 Mbol = {}
 Mbol_upper = {}
 Mbol_lower = {}
-vmax = {}
 
 # https://ui.adsabs.harvard.edu/abs/2014ApJ...796..128G/abstract
 # Comparison of Atmospheric Parameters Determined from Spectroscopy and Photometry for DA White Dwarfs in the Sloan Digital Sky Survey
@@ -94,17 +92,16 @@ logg = {
 
 
 try:
-
-    Mbol = np.load("Mbol_recomputed.npy", allow_pickle=True)[0]
-    if Mbol.size==1:
+    Mbol = np.load("Mbol_recomputed.npy", allow_pickle=True).item()
+    if len(Mbol) == 1:
         Mbol = {}
-        raise ValueError('Mbol_recomputed.npy is empty')
-    Mbol_upper = np.load("Mbol_upper_recomputed.npy", allow_pickle=True)[0]
-    Mbol_lower = np.load("Mbol_lower_recomputed.npy", allow_pickle=True)[0]
-    Mbol_err = np.load("Mbol_error_recomputed.npy", allow_pickle=True)[0]
-
+        raise ValueError("Mbol_recomputed.npy is empty")
+    Mbol_upper = np.load("Mbol_upper_recomputed.npy", allow_pickle=True).item()
+    Mbol_lower = np.load("Mbol_lower_recomputed.npy", allow_pickle=True).item()
+    Mbol_err = np.load("Mbol_error_recomputed.npy", allow_pickle=True).item()
+    print("Pre-computed files loaded successfully.")
 except:
-
+    print("Computing the post-hoc errors.")
     for k, g in logg.items():
         ftr = WDfitter()
         for i, source_id in enumerate(data_edr3["source_id"]):
@@ -112,9 +109,6 @@ except:
                 gcns_Mbol[gcns_wd["sourceID"] == source_id]
             )
             Mbol_initial[source_id] = Mbol_initial_guess
-            vmax[source_id] = np.nanmean(
-                gcns_vmax[gcns_wd["sourceID"] == source_id]
-            )
             ftr.fit(
                 atmosphere="H",
                 filters=[
@@ -155,11 +149,9 @@ except:
     np.save("Mbol_error_recomputed.npy", Mbol_err)
 
 
-
-
-_mbol_err, _mbol, _mbol_upper, _mbol_lower, _vmax = np.array(
+_mbol_err, _mbol, _mbol_upper, _mbol_lower = np.array(
     [
-        (Mbol_err[k], v, Mbol_upper[k], Mbol_lower[k], vmax[k])
+        (Mbol_err[k], v, Mbol_upper[k], Mbol_lower[k])
         for k, v in Mbol.items()
     ]
 ).T
@@ -174,18 +166,28 @@ mbol_total_err = mbol_total_err[_arg]
 _mbol = _mbol[_arg]
 
 
-mag_bin =  np.concatenate([[1.5], np.arange(5.25, 9.26, 0.25), np.arange(9.75, 15.745, 0.1), np.arange(15.75, 17.76, 0.5), [18.5]])
+mag_bin = np.concatenate(
+    [
+        [1.5],
+        np.arange(5.25, 9.26, 0.25),
+        np.arange(9.75, 15.745, 0.1),
+        np.arange(15.75, 17.76, 0.5),
+        [18.5],
+    ]
+)
 mag_bin_center = (mag_bin[1:] + mag_bin[:-1]) / 2.0
 idx = np.digitize(_mbol, mag_bin)
 sdv_bin = np.zeros_like(mag_bin)
 median_bin = np.zeros_like(mag_bin)
 for i in list(set(idx)):
-    sdv_bin[i] = 1.4826 * np.median(np.abs(np.median(mbol_total_err[idx==i]) - mbol_total_err[idx==i]))
-    median_bin[i] = np.median(mbol_total_err[idx==i])
+    sdv_bin[i] = 1.4826 * np.median(
+        np.abs(np.median(mbol_total_err[idx == i]) - mbol_total_err[idx == i])
+    )
+    median_bin[i] = np.median(mbol_total_err[idx == i])
 
 
 tck = splrep(mag_bin_center, median_bin[1:] + sdv_bin[1:] * 3, k=2, s=0.015)
-
+"""
 figure(1, figsize=(8, 6))
 clf()
 scatter(_mbol, mbol_total_err, s=1)
@@ -198,12 +200,20 @@ xlim(2, 19.0)
 tight_layout()
 grid()
 savefig('mbol_err_upper_bound.png')
+"""
 
-output = np.column_stack(
+output_median = np.column_stack(
+    (
+        mag_bin,
+        median_bin,
+    )
+)
+
+output_upper_bound = np.column_stack(
     (
         np.arange(2.0, 19.0, 0.1),
         splev(np.arange(2.0, 19.0, 0.1), tck),
     )
 )
-np.save("mbol_err_upper_bound", output)
-
+np.save("mbol_err_median", output_median)
+np.save("mbol_err_upper_bound", output_upper_bound)
