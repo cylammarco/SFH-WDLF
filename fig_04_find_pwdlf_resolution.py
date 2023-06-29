@@ -61,6 +61,7 @@ ax1.scatter(age, mag_at_peak_density, s=2, label="Measured")
 ax1.plot(
     age, mag_resolution_itp(age), color="black", ls="dashed", label="Fitted"
 )
+ax1.grid()
 ax1.legend()
 ax1.set_ylabel("magnitude at peak density")
 ax1.set_xlabel("log(age) (Gyr)")
@@ -91,6 +92,7 @@ bin_optimal_pwdlf = np.zeros_like(age[1:]).astype("int")
 j = 0
 bin_number = 0
 stop = False
+# the bin_optimal is the bin edges
 bin_optimal.append(mag_resolution_itp(age[0]))
 for i, a in enumerate(age):
     if i < j:
@@ -112,10 +114,10 @@ for i, a in enumerate(age):
         else:
             carry_on = False
             bin_number += 1
-    if stop:
-        break
     bin_optimal.append(end)
     bin_optimal_idx.append(i)
+    if stop:
+        break
 
 
 resolution_optimal = np.diff(bin_optimal)
@@ -132,7 +134,7 @@ ax3.set_ylabel("magnitude resolution")
 ax3.set_xlabel(r"M$_{\mathrm{bol}}$ [mag]")
 
 
-plt.subplots_adjust(top=0.99, bottom=0.075, left=0.125, right=0.99, hspace=0.0)
+plt.subplots_adjust(top=0.99, bottom=0.05, left=0.075, right=0.99, hspace=0.0)
 
 fig.savefig(os.path.join(figure_folder, "fig_04_magnitude_resoltuion.png"))
 
