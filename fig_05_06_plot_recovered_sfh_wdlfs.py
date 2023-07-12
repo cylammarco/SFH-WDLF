@@ -48,9 +48,12 @@ for i in age_list_2dp:
 mag_pwdlf = data[0][:, 0]
 
 
-partial_age_optimal, solution_optimal = np.load(
-    "gcns_sfh_optimal_resolution_bin_optimal.npy"
-).T
+(
+    partial_age_optimal,
+    solution_optimal,
+    solution_lower,
+    solution_upper,
+) = np.load("gcns_sfh_optimal_resolution_bin_optimal.npy").T
 # The lsq solution
 lsq_res = np.load(
     "gcns_sfh_optimal_resolution_lsq_solution.npy", allow_pickle=True
@@ -116,24 +119,27 @@ recomputed_wdlf_optimal_lsq = np.nansum(
     solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1
 )
 
-"""
-wdlf_err_low = np.nansum((solution_optimal_lsq - stdev) * np.array(partial_wdlf_optimal).T, axis=1
+wdlf_err_low = np.nansum(
+    (solution_lower) * np.array(partial_wdlf_optimal).T, axis=1
 )
-wdlf_err_high = np.nansum((solution_optimal_lsq + stdev) * np.array(partial_wdlf_optimal).T, axis=1
+wdlf_err_high = np.nansum(
+    (solution_upper) * np.array(partial_wdlf_optimal).T, axis=1
 )
-"""
+
 fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
     nrows=3, ncols=1, figsize=(8, 10), height_ratios=(5, 1, 8)
 )
 
-
 ax1.step(partial_age_optimal, solution_optimal, where="post", label="MCMC")
 ax1.step(partial_age_optimal, solution_optimal_lsq, where="post", label="lsq")
-"""
-ax1.fill_between(partial_age_optimal, solution_optimal_lsq - stdev, solution_optimal_lsq + stdev, step="post", color='grey')
-ax1.step(partial_age_optimal, solution_optimal_lsq - stdev, step="post", color='grey')
-ax1.step(partial_age_optimal, solution_optimal_lsq + stdev, step="post", color='grey')
-"""
+ax1.fill_between(
+    partial_age_optimal,
+    solution_lower,
+    solution_upper,
+    step="post",
+    color="lightgrey",
+)
+
 ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 15)
@@ -165,19 +171,20 @@ ax2.plot(
     label="Reconstructed WDLF (lsq)",
 )
 
-"""
+# make the top axis
+# ax2 = ax.twiny()
+
+
 ax2.fill_between(
     mag_obs_optimal,
-    (recomputed_wdlf_optimal_lsq - wdlf_err_low)
+    wdlf_err_low
     / np.nansum(recomputed_wdlf_optimal_lsq)
     * np.nansum(obs_wdlf_optimal),
-    (recomputed_wdlf_optimal_lsq + wdlf_err_high)
+    wdlf_err_high
     / np.nansum(recomputed_wdlf_optimal_lsq)
     * np.nansum(obs_wdlf_optimal),
-    color='grey'
+    color="lightgrey",
 )
-"""
-
 
 ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
 ax2.set_ylabel("log(arbitrary number density)")

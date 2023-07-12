@@ -169,7 +169,8 @@ _mbol = _mbol[_arg]
 mag_bin = np.concatenate(
     [
         [1.5],
-        np.arange(5.25, 9.26, 0.25),
+        np.arange(5.25, 6.75, 0.5),
+        np.arange(6.75, 9.75, 0.25),
         np.arange(9.75, 15.745, 0.1),
         np.arange(15.75, 17.76, 0.5),
         [18.5],
