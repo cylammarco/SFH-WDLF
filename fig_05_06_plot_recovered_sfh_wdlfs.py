@@ -3,7 +3,10 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 from spectres import spectres
+from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
 
+
+plt.rcParams.update({'font.size': 12})
 
 figure_folder = "SFH-WDLF-article/figures"
 
@@ -127,7 +130,7 @@ wdlf_err_high = np.nansum(
 )
 
 fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(5, 1, 8)
+    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(10, 3, 15)
 )
 
 ax1.step(partial_age_optimal, solution_optimal, where="post", label="MCMC")
@@ -146,6 +149,7 @@ ax1.set_xlim(0, 15)
 ax1.set_ylim(bottom=0)
 ax1.set_xlabel("Lookback time / Gyr")
 ax1.set_ylabel("Relative Star Formation Rate")
+ax1.legend()
 
 ax_dummy1.axis("off")
 ax2.errorbar(
@@ -171,10 +175,6 @@ ax2.plot(
     label="Reconstructed WDLF (lsq)",
 )
 
-# make the top axis
-# ax2 = ax.twiny()
-
-
 ax2.fill_between(
     mag_obs_optimal,
     wdlf_err_low
@@ -186,16 +186,29 @@ ax2.fill_between(
     color="lightgrey",
 )
 
+ax2.xaxis.set_ticks(np.arange(6.0, 18.1, 1.0))
 ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
 ax2.set_ylabel("log(arbitrary number density)")
-ax2.set_xlim(6.0, 18.5)
-ax2.set_ylim(1e-7, 5e-3)
+ax2.set_xlim(5.75, 18.25)
+ax2.set_ylim(1e-6, 5e-3)
 ax2.set_yscale("log")
 ax2.legend()
 ax2.grid()
 
+# Get the Mbol to Age relation
+atm = AtmosphereModelReader()
+Mbol_to_age = atm.interp_am(dependent="age")
+age_ticks = Mbol_to_age(8.0, np.arange(6.0, 18.1, 1.0))
+age_ticklabels = [f"{i/1e9:.3f}" for i in age_ticks]
+
+# make the top axis
+ax2b = ax2.twiny()
+ax2b.set_xlim(ax2.get_xlim())
+ax2b.set_xticks(ax2.get_xticks())
+ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
+
 plt.subplots_adjust(
-    top=0.995, bottom=0.045, left=0.085, right=0.995, hspace=0.01
+    top=0.995, bottom=0.06, left=0.1, right=0.995, hspace=0.01
 )
 
 fig1.savefig(
