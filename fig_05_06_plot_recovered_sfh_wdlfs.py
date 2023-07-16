@@ -6,7 +6,7 @@ from spectres import spectres
 from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
 
 
-plt.rcParams.update({'font.size': 12})
+plt.rcParams.update({"font.size": 12})
 
 figure_folder = "SFH-WDLF-article/figures"
 
@@ -152,20 +152,13 @@ ax1.set_ylabel("Relative Star Formation Rate")
 ax1.legend()
 
 ax_dummy1.axis("off")
-ax2.errorbar(
-    mag_obs_optimal,
-    obs_wdlf_optimal,
-    yerr=[obs_wdlf_err_optimal, obs_wdlf_err_optimal],
-    fmt="+",
-    markersize=5,
-    label="Input WDLF",
-)
 ax2.plot(
     mag_obs_optimal,
     recomputed_wdlf_optimal
     / np.nansum(recomputed_wdlf_optimal)
     * np.nansum(obs_wdlf_optimal),
     label="Reconstructed WDLF (MCMC)",
+    color="C00",
 )
 ax2.plot(
     mag_obs_optimal,
@@ -173,6 +166,17 @@ ax2.plot(
     / np.nansum(recomputed_wdlf_optimal_lsq)
     * np.nansum(obs_wdlf_optimal),
     label="Reconstructed WDLF (lsq)",
+    color="C01",
+)
+ax2.errorbar(
+    mag_obs_optimal,
+    obs_wdlf_optimal,
+    yerr=[obs_wdlf_err_optimal, obs_wdlf_err_optimal],
+    fmt="+",
+    markersize=5,
+    label="Input WDLF",
+    color="black",
+    alpha=0.5
 )
 
 ax2.fill_between(
@@ -207,9 +211,7 @@ ax2b.set_xlim(ax2.get_xlim())
 ax2b.set_xticks(ax2.get_xticks())
 ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
 
-plt.subplots_adjust(
-    top=0.995, bottom=0.06, left=0.1, right=0.995, hspace=0.01
-)
+plt.subplots_adjust(top=0.995, bottom=0.06, left=0.1, right=0.995, hspace=0.01)
 
 fig1.savefig(
     os.path.join(
