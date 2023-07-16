@@ -94,7 +94,7 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_age_optimal.append(age_temp / age_count)
 
 
-plt.figure(1, figsize=(8, 6))
+plt.figure(1, figsize=(8, 8))
 plt.clf()
 for i in partial_wdlf_optimal:
     plt.plot(mag_obs_optimal, i, color="black", lw=0.5)

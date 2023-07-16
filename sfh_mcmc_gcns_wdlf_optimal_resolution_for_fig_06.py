@@ -211,7 +211,13 @@ for i in range(1):
     solution_lower = np.zeros(ndim_optimal)
     solution_upper = np.zeros(ndim_optimal)
     for i in range(ndim_optimal):
-        solution_lower[i], solution_optimal[i], solution_upper[i] = np.percentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
+        (
+            solution_lower[i],
+            solution_optimal[i],
+            solution_upper[i],
+        ) = np.percentile(
+            flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492]
+        )
 
     initial_weights = solution_optimal
 
@@ -219,7 +225,14 @@ for i in range(1):
 
     np.save(
         "gcns_sfh_optimal_resolution_bin_optimal.npy",
-        np.column_stack((partial_age_optimal, solution_optimal, solution_lower, solution_upper)),
+        np.column_stack(
+            (
+                partial_age_optimal,
+                solution_optimal,
+                solution_lower,
+                solution_upper,
+            )
+        ),
     )
     np.save(
         "gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy",
@@ -231,17 +244,17 @@ for i in range(1):
     np.save("mcmc_flattened_chain", flat_samples_optimal)
 
 
-
 sfh_mcmc_lower = np.zeros(ndim_02)
 sfh_mcmc = np.zeros(ndim_02)
 sfh_mcmc_upper = np.zeros(ndim_02)
 for i in range(ndim_02):
-    sfh_mcmc_lower[i], sfh_mcmc[i], sfh_mcmc_upper[i] = np.percentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
+    sfh_mcmc_lower[i], sfh_mcmc[i], sfh_mcmc_upper[i] = np.percentile(
+        flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492]
+    )
 
 
 sfh_mcmc_lower /= np.nanmax(sfh_mcmc)
 sfh_mcmc_upper /= np.nanmax(sfh_mcmc)
-
 
 
 # Finally refining with a minimizer
