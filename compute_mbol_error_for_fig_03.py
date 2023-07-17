@@ -5,6 +5,7 @@ import numpy as np
 from scipy.signal import medfilt
 from scipy.interpolate import UnivariateSpline
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
 from WDPhotTools.fitter import WDfitter
 
 from scipy.interpolate import splrep, splev
@@ -81,7 +82,8 @@ Mbol_lower = {}
 
 # https://ui.adsabs.harvard.edu/abs/2014ApJ...796..128G/abstract
 # Comparison of Atmospheric Parameters Determined from Spectroscopy and Photometry for DA White Dwarfs in the Sloan Digital Sky Survey
-# log(g) = 7.994 ± 0.404
+# log(g_phot) = 7.994 ± 0.404
+# log(g_spec) = 8.037 ± 0.206
 logg_mean = 7.994
 logg_sigma = 0.404
 logg = {

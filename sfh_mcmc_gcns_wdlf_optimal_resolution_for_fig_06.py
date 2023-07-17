@@ -118,7 +118,7 @@ pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[
     :, obs_wdlf_optimal > 0.0
 ]
 
-nwalkers_optimal = 1000
+nwalkers_optimal = 250
 
 ndim_optimal = len(partial_wdlf_optimal)
 
@@ -128,63 +128,22 @@ obs_err_normed /= np.sum(obs_normed)
 obs_normed /= np.sum(obs_normed)
 
 
-initial_weights = np.array(
-    [
-        0.00743825,
-        0.00973495,
-        0.00833878,
-        0.02137616,
-        0.04841087,
-        0.04618622,
-        0.02068454,
-        0.02967219,
-        0.05353962,
-        0.0213752,
-        0.04235483,
-        0.03109259,
-        0.04260385,
-        0.03949018,
-        0.02721844,
-        0.03188883,
-        0.03322586,
-        0.03396735,
-        0.0337657,
-        0.04128011,
-        0.05309941,
-        0.04316444,
-        0.03748048,
-        0.05341513,
-        0.02272911,
-        0.03329748,
-        0.01653212,
-        0.00450217,
-        0.01473943,
-        0.01988275,
-        0.01779972,
-        0.0038156,
-        0.02219265,
-        0.00457476,
-        0.00045124,
-        0.00016956,
-        0.00016031,
-        0.00026658,
-        0.00038806,
-        0.00030394,
-        0.00047451,
-        0.00071062,
-        0.00059391,
-        0.00049896,
-        0.00068063,
-        0.00094117,
-        0.00113014,
-        0.00125013,
-        0.00151658,
-        0.00160442,
-        0.00163118,
-    ]
-)
+initial_weights = np.array([0.00759547, 0.01112192, 0.00938485, 0.02183045, 0.06028892,
+       0.0344879 , 0.01994437, 0.04445642, 0.03658262, 0.03021301,
+       0.03752557, 0.0414545 , 0.03148443, 0.04442393, 0.03165496,
+       0.02594899, 0.0358974 , 0.03325569, 0.04206118, 0.03551886,
+       0.05297459, 0.04801712, 0.03613603, 0.04464067, 0.02632603,
+       0.02875481, 0.01386197, 0.00391486, 0.01963151, 0.01928747,
+       0.0155474 , 0.00721819, 0.01792462, 0.00121939, 0.0003284 ,
+       0.0001641 , 0.0001907 , 0.0002886 , 0.00038669, 0.00038517,
+       0.00059965, 0.00089509, 0.00075837, 0.0007726 , 0.00086001,
+       0.0010473 , 0.00124576, 0.00166576, 0.00173476, 0.00197526,
+       0.00179816])
 
-for i in range(1):
+n_step = 20000
+n_burn = 2000
+
+for i in range(10):
     print(i)
     rel_norm_optimal = np.vstack(
         [
@@ -203,9 +162,9 @@ for i in range(1):
             pwdlf_model_optimal,
         ),
     )
-    sampler_optimal.run_mcmc(rel_norm_optimal, 10000, progress=True)
+    sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
 
-    flat_samples_optimal = sampler_optimal.get_chain(discard=1000, flat=True)
+    flat_samples_optimal = sampler_optimal.get_chain(discard=n_burn, flat=True)
 
     solution_optimal = np.zeros(ndim_optimal)
     solution_lower = np.zeros(ndim_optimal)
@@ -241,13 +200,11 @@ for i in range(1):
         ),
     )
 
-    np.save("mcmc_flattened_chain", flat_samples_optimal)
 
-
-sfh_mcmc_lower = np.zeros(ndim_02)
-sfh_mcmc = np.zeros(ndim_02)
-sfh_mcmc_upper = np.zeros(ndim_02)
-for i in range(ndim_02):
+sfh_mcmc_lower = np.zeros(ndim_optimal)
+sfh_mcmc = np.zeros(ndim_optimal)
+sfh_mcmc_upper = np.zeros(ndim_optimal)
+for i in range(ndim_optimal):
     sfh_mcmc_lower[i], sfh_mcmc[i], sfh_mcmc_upper[i] = np.percentile(
         flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492]
     )
