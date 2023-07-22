@@ -37,7 +37,7 @@ def log_probability(rel_norm, obs, err, model_list):
 data = []
 age_list_1 = np.arange(0.049, 0.100, 0.001)
 age_list_2 = np.arange(0.100, 0.350, 0.005)
-age_list_3 = np.arange(0.35, 15.01, 0.01)
+age_list_3 = np.arange(0.35, 14.01, 0.01)
 age_list_3dp = np.concatenate((age_list_1, age_list_2))
 age_list_2dp = age_list_3
 
@@ -126,7 +126,7 @@ for i, d in enumerate(data):
 
 
 mag_resolution_itp = interpolate.UnivariateSpline(
-    age, mag_at_peak_density, s=50, k=5
+    age, mag_at_peak_density, s=len(age) / 150, k=5
 )
 
 # Load the "resolution" of the Mbol solution
@@ -134,16 +134,17 @@ mag_resolution_itp = interpolate.UnivariateSpline(
 #    *np.load("mbol_err_upper_bound.npy").T, s=0
 # )
 mbol_err_upper_bound = interpolate.UnivariateSpline(
-    *np.load("mbol_err_median.npy").T, s=0
+    *np.load("SFH-WDLF-article/figure_data/mbol_err_mean.npy").T, s=0
 )
 
 mag_bin = []
-mag_bin_idx = []
+bin_idx = []
 # to group the constituent pwdlfs into the optimal set of pwdlfs
 mag_bin_pwdlf = np.zeros_like(age[1:]).astype("int")
 j = 0
 bin_number = 0
 stop = False
+# the bin_optimal is the bin edges
 mag_bin.append(mag_at_peak_density[0])
 for i, a in enumerate(age):
     if i < j:
@@ -152,12 +153,15 @@ for i, a in enumerate(age):
     end = start
     j = i
     carry_on = True
+    if j >= len(age) - 1:
+        carry_on = False
     while carry_on:
         tmp = mag_resolution_itp(age[j + 1]) - mag_resolution_itp(age[j])
         print(j, end + tmp - start)
-        if end + tmp - start < mbol_err_upper_bound(end) * 1.1775:
+        mag_bin_pwdlf[j] = bin_number
+        # Nyquist sampling: sample 2 times for every FWHM (i.e. 2.355 sigma)
+        if end + tmp - start < mbol_err_upper_bound(start) * 1.1775:
             end = end + tmp
-            mag_bin_pwdlf[j] = bin_number
             j += 1
             if j >= len(age) - 1:
                 carry_on = False
@@ -166,35 +170,37 @@ for i, a in enumerate(age):
             carry_on = False
             bin_number += 1
     mag_bin.append(end)
-    mag_bin_idx.append(i)
+    bin_idx.append(i)
     if stop:
         break
 
 
 # these the the bin edges
 mag_bin = np.array(mag_bin)
+
+# if magnitudes don't reach 18, pad to 18 in 0.2 mag increment
+if max(mag_bin) < 18.0:
+    _n = int(np.round((18.0 - mag_bin[-1]) / 0.2))
+    mag_bin = np.append(mag_bin[:-1], np.linspace(mag_bin[-1], 18.0, _n))
+
 # get the bin centre
 mag_bin = (mag_bin[1:] + mag_bin[:-1]) / 2.0
 pwdlf_mapping_mag_bin = np.insert(mag_bin_pwdlf, 0, 0)
 
 wdlf_number_density_1 = spectres(mag_bin, data[0][:, 0], wdlf_reconstructed_1)
-wdlf_number_density_1 /= np.sum(wdlf_number_density_1)
-
 wdlf_number_density_2 = spectres(mag_bin, data[0][:, 0], wdlf_reconstructed_2)
-wdlf_number_density_2 /= np.sum(wdlf_number_density_2)
-
 wdlf_number_density_3 = spectres(mag_bin, data[0][:, 0], wdlf_reconstructed_3)
-wdlf_number_density_3 /= np.sum(wdlf_number_density_3)
-
 wdlf_number_density_4 = spectres(mag_bin, data[0][:, 0], wdlf_reconstructed_4)
-wdlf_number_density_4 /= np.sum(wdlf_number_density_4)
-
 wdlf_number_density_5 = spectres(mag_bin, data[0][:, 0], wdlf_reconstructed_5)
-wdlf_number_density_5 /= np.sum(wdlf_number_density_5)
-
 wdlf_number_density_combined = spectres(
     mag_bin, data[0][:, 0], wdlf_reconstructed_combined
 )
+
+wdlf_number_density_1 /= np.sum(wdlf_number_density_1)
+wdlf_number_density_2 /= np.sum(wdlf_number_density_2)
+wdlf_number_density_3 /= np.sum(wdlf_number_density_3)
+wdlf_number_density_4 /= np.sum(wdlf_number_density_4)
+wdlf_number_density_5 /= np.sum(wdlf_number_density_5)
 wdlf_number_density_combined /= np.sum(wdlf_number_density_combined)
 
 partial_wdlf = []
@@ -236,486 +242,80 @@ pwdlf_model_combined /= np.nansum(pwdlf_model_combined) * np.nanmax(
 
 nwalkers = 250
 ndim = len(partial_wdlf)
-init_guess_1 = np.array(
-    [
-        2.47732719e-02,
-        6.65942566e-15,
-        2.61619032e-02,
-        2.12316253e-02,
-        3.04348956e-02,
-        3.07907078e-02,
-        3.67869700e-02,
-        2.51799770e-02,
-        2.88735693e-02,
-        3.08047079e-02,
-        3.10077052e-02,
-        3.41437170e-02,
-        7.96399479e-01,
-        1.00000000e00,
-        7.09654530e-01,
-        8.95413902e-01,
-        4.73860968e-01,
-        6.78211704e-01,
-        6.28562444e-01,
-        2.97640557e-01,
-        6.09749748e-01,
-        1.94725255e-01,
-        7.39335921e-01,
-        2.52912237e-01,
-        3.70740802e-01,
-        9.95214133e-02,
-        6.17370833e-01,
-        3.31579622e-01,
-        5.34930715e-02,
-        1.05225354e-01,
-        3.48250019e-01,
-        1.29103496e-01,
-        1.58790554e-02,
-        5.88602539e-01,
-        3.35803427e-01,
-        1.43076912e-01,
-        2.46687123e-01,
-        1.67728193e-01,
-        1.71451690e-01,
-        6.96921375e-02,
-        8.17298066e-02,
-        2.57449126e-02,
-        1.14589822e-02,
-        6.18849467e-02,
-        1.93545537e-02,
-        3.14460180e-02,
-        1.31248348e-02,
-        1.65921717e-02,
-        1.05223724e-02,
-        6.19842043e-03,
-        2.45827025e-02,
-        1.52980218e-02,
-        1.26419659e-02,
-        8.11312554e-03,
-        1.13570830e-02,
-        6.70369529e-03,
-        7.78657451e-03,
-        5.41755182e-03,
-        3.69713038e-03,
-        5.04459496e-03,
-        4.20614326e-03,
-        1.08191941e-03,
-        1.99387185e-03,
-        1.26657623e-03,
-        2.01214632e-03,
-        2.94021929e-03,
-        1.58431832e-03,
-        2.89119061e-03,
-        1.95536072e-03,
-        4.78117270e-03,
-        1.40994569e-03,
-        3.35656894e-03,
-        3.03150915e-03,
-        1.96622145e-03,
-        2.11262093e-03,
-        2.17319843e-03,
-    ]
-)
-init_guess_2 = np.array(
-    [
-        1.27924961e-02,
-        4.84152685e-14,
-        4.65368141e-03,
-        5.04498194e-03,
-        2.43356763e-03,
-        1.08550522e-02,
-        1.14676439e-02,
-        1.12482328e-02,
-        1.04918564e-02,
-        1.38225758e-02,
-        1.44347317e-02,
-        5.49623470e-03,
-        1.10571310e-02,
-        1.10950596e-02,
-        1.33206261e-02,
-        2.98764163e-02,
-        3.64906235e-03,
-        7.84417729e-03,
-        7.85937293e-03,
-        1.74481215e-02,
-        6.09018629e-02,
-        4.17797017e-02,
-        5.70562101e-02,
-        9.08176933e-02,
-        3.88900045e-01,
-        6.45387940e-02,
-        1.27159183e-01,
-        7.15183062e-01,
-        4.74409021e-02,
-        3.80705585e-02,
-        1.00000000e00,
-        6.90637868e-02,
-        5.32335073e-02,
-        6.69120076e-03,
-        3.84046488e-01,
-        8.77143228e-02,
-        1.75531482e-01,
-        3.43574461e-01,
-        2.70041668e-02,
-        1.58912099e-01,
-        1.15947811e-02,
-        5.29746378e-02,
-        5.16850952e-02,
-        5.11559550e-03,
-        3.67048873e-03,
-        2.95326722e-02,
-        4.45332997e-02,
-        1.32163338e-03,
-        9.83179124e-03,
-        2.05093374e-02,
-        2.35113726e-02,
-        1.25518131e-02,
-        8.62841079e-03,
-        1.13515358e-02,
-        1.12378984e-02,
-        6.83306505e-03,
-        6.31331975e-03,
-        6.21065041e-03,
-        3.17172796e-03,
-        5.45949134e-03,
-        3.76856407e-03,
-        1.93459733e-03,
-        1.91947587e-03,
-        2.16971911e-03,
-        1.56524756e-03,
-        3.40428610e-03,
-        2.75783733e-03,
-        1.95302182e-03,
-        1.80407537e-03,
-        2.89980396e-03,
-        2.15500776e-03,
-        2.93061785e-03,
-        3.93728453e-03,
-        1.16714093e-03,
-        2.64936975e-03,
-        4.57399490e-03,
-    ]
-)
-init_guess_3 = np.array(
-    [
-        5.35898658e-03,
-        4.74960445e-03,
-        6.22451041e-03,
-        3.14398317e-15,
-        4.15671864e-03,
-        1.18955915e-02,
-        5.28572092e-03,
-        1.62483414e-03,
-        5.99664766e-03,
-        7.02302098e-03,
-        8.65048310e-03,
-        4.78544686e-03,
-        5.44381392e-03,
-        9.35220641e-03,
-        4.39148037e-03,
-        5.66938606e-03,
-        5.92695593e-03,
-        4.71778800e-03,
-        8.90156254e-03,
-        6.88992919e-03,
-        5.64639090e-03,
-        1.10486157e-02,
-        8.51638583e-03,
-        5.81221290e-03,
-        9.32051169e-03,
-        1.27128637e-02,
-        1.33994385e-02,
-        1.35911327e-02,
-        2.20954251e-02,
-        1.69583881e-02,
-        1.58377244e-02,
-        3.60967344e-02,
-        1.51330057e-02,
-        2.65871706e-02,
-        4.50696534e-02,
-        2.07949054e-02,
-        5.71181419e-02,
-        1.86495975e-02,
-        1.00762258e-01,
-        1.00000000e00,
-        1.90420002e-02,
-        4.35288534e-01,
-        4.19247370e-02,
-        6.50462367e-02,
-        2.49352842e-01,
-        1.38975846e-01,
-        1.13645251e-01,
-        8.20554855e-02,
-        7.36727056e-02,
-        4.23362701e-02,
-        1.79556829e-01,
-        8.01409817e-02,
-        2.41191895e-02,
-        1.12328916e-01,
-        2.40644347e-02,
-        7.04521766e-02,
-        1.77995750e-02,
-        4.28404563e-02,
-        1.87340144e-02,
-        2.96066830e-02,
-        2.87689580e-02,
-        4.49487320e-03,
-        1.64636163e-02,
-        7.53028049e-03,
-        1.18752246e-02,
-        2.33153636e-02,
-        1.86528965e-02,
-        8.96585914e-03,
-        1.60640869e-02,
-        1.92179272e-02,
-        2.06038075e-02,
-        1.09283844e-02,
-        6.05200795e-03,
-        1.43066804e-02,
-        1.07267877e-02,
-        1.71637769e-02,
-    ]
-)
-init_guess_4 = np.array(
-    [
-        1.12741883e-02,
-        3.12248238e-03,
-        3.73047048e-04,
-        3.05344103e-03,
-        7.04529359e-03,
-        5.70941296e-03,
-        5.08657363e-03,
-        8.19692859e-03,
-        4.34717604e-03,
-        5.79218654e-03,
-        2.56185406e-03,
-        6.40142756e-04,
-        1.41235257e-03,
-        3.45215616e-16,
-        3.87004637e-03,
-        2.71149175e-03,
-        3.40509863e-03,
-        4.02479764e-03,
-        1.96558581e-03,
-        2.26824325e-03,
-        4.10954389e-03,
-        7.75989082e-03,
-        5.52896718e-03,
-        4.97956147e-03,
-        5.87043918e-03,
-        9.11655712e-03,
-        5.51258234e-03,
-        3.89984287e-03,
-        1.19010336e-02,
-        9.78127742e-03,
-        5.59752505e-03,
-        1.10694145e-02,
-        5.85716731e-03,
-        9.13036545e-03,
-        7.14161039e-03,
-        8.37051776e-03,
-        7.68543526e-03,
-        6.93404717e-03,
-        5.66354134e-03,
-        1.65137696e-02,
-        6.62172467e-04,
-        1.00000000e00,
-        1.75997401e-01,
-        8.23188535e-02,
-        7.00379365e-01,
-        2.01033544e-01,
-        4.47852764e-02,
-        2.41111688e-01,
-        3.12965414e-01,
-        1.07226877e-01,
-        1.95246214e-01,
-        7.33647410e-03,
-        3.31049455e-01,
-        2.98431285e-02,
-        5.83205259e-02,
-        2.19436791e-01,
-        4.00183132e-02,
-        1.31254794e-02,
-        1.10762162e-01,
-        3.26834169e-02,
-        1.81857895e-02,
-        4.48161936e-02,
-        4.27171891e-02,
-        3.49960187e-02,
-        4.70297633e-03,
-        3.03050675e-02,
-        3.06448907e-02,
-        2.37869685e-02,
-        2.39485156e-02,
-        1.21063113e-02,
-        2.06999687e-02,
-        2.70128987e-03,
-        2.05742434e-02,
-        1.09624385e-02,
-        3.02735143e-02,
-        1.96156703e-02,
-    ]
-)
-init_guess_5 = np.array(
-    [
-        1.76231610e-15,
-        1.31049938e-16,
-        6.23966300e-17,
-        2.23004178e-16,
-        6.27672382e-16,
-        1.81378424e-16,
-        2.48944840e-16,
-        1.33001203e-16,
-        1.98704534e-16,
-        3.96030812e-16,
-        4.90838101e-16,
-        9.33794886e-16,
-        3.23967622e-16,
-        1.15443689e-15,
-        1.11842218e-17,
-        1.10451680e-15,
-        4.41489145e-16,
-        9.02569876e-17,
-        7.36364185e-16,
-        4.18859576e-16,
-        2.50836441e-16,
-        8.80590925e-17,
-        3.68142487e-16,
-        8.52626062e-17,
-        1.24344003e-16,
-        4.51102903e-17,
-        6.60312075e-18,
-        2.57137304e-17,
-        6.48961751e-16,
-        7.56847294e-16,
-        1.73400122e-16,
-        9.78336225e-03,
-        8.92693923e-03,
-        1.09238400e-02,
-        7.94279096e-03,
-        9.11333075e-03,
-        7.86018387e-03,
-        7.70280021e-03,
-        4.19029198e-03,
-        3.57897287e-03,
-        9.82255199e-03,
-        1.38966514e-02,
-        2.56012997e-02,
-        2.70311245e-02,
-        4.07860275e-02,
-        1.16138322e-01,
-        2.72166473e-01,
-        1.03256472e-01,
-        6.61102304e-01,
-        8.84658412e-02,
-        1.00000000e00,
-        4.30842543e-01,
-        5.52895502e-01,
-        1.35890041e-01,
-        4.82306766e-01,
-        2.07639130e-01,
-        2.21244237e-01,
-        2.11862781e-01,
-        1.23562397e-01,
-        1.93221152e-01,
-        7.09511808e-02,
-        9.18699686e-02,
-        1.40449250e-01,
-        6.30446716e-02,
-        1.66190563e-02,
-        1.09323597e-01,
-        7.63490039e-02,
-        1.61190125e-01,
-        3.61345200e-02,
-        6.39203091e-02,
-        8.71409398e-03,
-        2.52752764e-02,
-        7.41472720e-02,
-        2.52930789e-02,
-        1.61621177e-01,
-        9.59775798e-03,
-    ]
-)
-init_guess_combined = np.array(
-    [
-        5.35898658e-03,
-        4.74960445e-03,
-        6.22451041e-03,
-        3.14398317e-15,
-        4.15671864e-03,
-        1.18955915e-02,
-        5.28572092e-03,
-        1.62483414e-03,
-        5.99664766e-03,
-        7.02302098e-03,
-        8.65048310e-03,
-        4.78544686e-03,
-        5.44381392e-03,
-        9.35220641e-03,
-        4.39148037e-03,
-        5.66938606e-03,
-        5.92695593e-03,
-        4.71778800e-03,
-        8.90156254e-03,
-        6.88992919e-03,
-        5.64639090e-03,
-        1.10486157e-02,
-        8.51638583e-03,
-        5.81221290e-03,
-        9.32051169e-03,
-        1.27128637e-02,
-        1.33994385e-02,
-        1.35911327e-02,
-        2.20954251e-02,
-        1.69583881e-02,
-        1.58377244e-02,
-        3.60967344e-02,
-        1.51330057e-02,
-        2.65871706e-02,
-        4.50696534e-02,
-        2.07949054e-02,
-        5.71181419e-02,
-        1.86495975e-02,
-        1.00762258e-01,
-        1.00000000e00,
-        1.90420002e-02,
-        4.35288534e-01,
-        4.19247370e-02,
-        6.50462367e-02,
-        2.49352842e-01,
-        1.38975846e-01,
-        1.13645251e-01,
-        8.20554855e-02,
-        7.36727056e-02,
-        4.23362701e-02,
-        1.79556829e-01,
-        8.01409817e-02,
-        2.41191895e-02,
-        1.12328916e-01,
-        2.40644347e-02,
-        7.04521766e-02,
-        1.77995750e-02,
-        4.28404563e-02,
-        1.87340144e-02,
-        2.96066830e-02,
-        2.87689580e-02,
-        4.49487320e-03,
-        1.64636163e-02,
-        7.53028049e-03,
-        1.18752246e-02,
-        2.33153636e-02,
-        1.86528965e-02,
-        8.96585914e-03,
-        1.60640869e-02,
-        1.92179272e-02,
-        2.06038075e-02,
-        1.09283844e-02,
-        6.05200795e-03,
-        1.43066804e-02,
-        1.07267877e-02,
-        1.71637769e-02,
-    ]
-)
+init_guess_1 = np.array([2.51207737e-02, 1.63992915e-02, 9.29823145e-03, 1.13673706e-02,
+       1.64840213e-02, 1.27459312e-02, 1.59139221e-01, 1.00000000e+00,
+       7.27969300e-01, 1.15928054e-02, 1.00658795e-02, 4.53701736e-03,
+       2.93105114e-03, 5.88583040e-03, 6.10183116e-03, 1.07696334e-02,
+       1.54322727e-02, 2.35562770e-02, 3.41788915e-02, 3.74469431e-02,
+       6.86011546e-02, 9.78065154e-02, 5.86490219e-02, 2.43614434e-01,
+       3.50492247e-01, 2.75040491e-01, 3.24478047e-01, 2.15351363e-01,
+       1.73431812e-01, 1.36594478e-01, 8.32070844e-02, 6.12688187e-02,
+       4.81886618e-02, 2.90234218e-02, 2.00944703e-02, 1.14855921e-02,
+       6.57845977e-03, 3.23611778e-03, 1.27319458e-03, 4.88811181e-04,
+       6.02632525e-04, 7.70514477e-04, 9.61031980e-04])
+init_guess_2 = np.array([1.10236968e-02, 5.91305430e-03, 4.96477165e-03, 5.45993716e-03,
+       4.47783637e-03, 4.73426473e-03, 4.15746437e-03, 5.09318067e-03,
+       4.96869946e-03, 6.20857002e-03, 7.32366159e-03, 1.83193079e-02,
+       1.99900774e-02, 1.34564416e-01, 1.00000000e+00, 9.72681232e-01,
+       7.11312225e-01, 1.25942113e-01, 6.32356895e-02, 3.00175080e-02,
+       5.41289802e-02, 1.18771977e-01, 5.37971986e-02, 2.19087797e-01,
+       3.67491889e-01, 2.49918631e-01, 3.26201672e-01, 2.14910140e-01,
+       1.75753776e-01, 1.15113516e-01, 9.19665713e-02, 6.23207952e-02,
+       4.63026318e-02, 2.70319185e-02, 2.04945676e-02, 1.12280542e-02,
+       6.11832278e-03, 2.83896526e-03, 1.23060555e-03, 5.44969300e-04,
+       6.08158645e-04, 7.67298779e-04, 9.80414931e-04])
+init_guess_3 = np.array([1.23772377e-02, 5.62087158e-03, 5.10116407e-03, 6.07611924e-03,
+       5.13830859e-03, 4.87420558e-03, 7.51551725e-03, 8.24315853e-03,
+       6.06453748e-03, 4.07499424e-03, 4.61597071e-03, 3.33538813e-03,
+       4.32810270e-03, 6.06271217e-03, 9.16702295e-03, 2.53227574e-02,
+       3.85360687e-02, 6.57964441e-02, 5.17502798e-02, 1.62736940e-02,
+       2.15238556e-01, 7.23057733e-01, 3.38186711e-01, 1.00000000e+00,
+       3.43707074e-01, 1.94021161e-01, 4.90162155e-01, 2.20078475e-01,
+       1.91217069e-01, 1.72583457e-01, 1.04406794e-01, 6.18161978e-02,
+       6.04228271e-02, 4.63470822e-02, 2.04723578e-02, 5.47670874e-03,
+       5.00448690e-03, 6.98611707e-03, 2.19741045e-03, 8.07563166e-04,
+       9.25746128e-04, 1.40830511e-03, 1.65521923e-03])
+init_guess_4 = np.array([6.40160070e-03, 3.88401418e-03, 3.00239996e-03, 2.89974270e-03,
+       3.39560438e-03, 2.51322766e-03, 2.52238174e-03, 2.16629695e-03,
+       2.68597189e-03, 2.07657579e-03, 2.73541855e-03, 3.08616347e-03,
+       2.76357056e-03, 4.58026780e-03, 5.26572552e-03, 8.58078806e-03,
+       1.31873334e-02, 1.92040352e-02, 3.61021245e-02, 2.14065024e-02,
+       5.79406496e-02, 7.01924629e-02, 3.10455215e-02, 1.68237536e-01,
+       4.55455801e-01, 1.00000000e+00, 2.14527012e-01, 1.46529497e-01,
+       1.73803281e-01, 9.97256520e-02, 6.93150690e-02, 5.82957507e-02,
+       3.90836140e-02, 2.29978248e-02, 1.71721465e-02, 9.45394819e-03,
+       4.97181901e-03, 2.15816634e-03, 1.25742289e-03, 7.49973645e-04,
+       7.72218299e-04, 9.52241666e-04, 9.27664188e-04])
+init_guess_5 = np.array([5.85174331e-03, 3.40194444e-03, 2.19767782e-03, 2.36118890e-03,
+       2.10511366e-03, 2.40158857e-03, 2.16905287e-03, 1.81568587e-03,
+       2.04007348e-03, 2.52114454e-03, 2.28801808e-03, 2.57206557e-03,
+       2.48890023e-03, 4.03006880e-03, 5.50846514e-03, 7.69283341e-03,
+       1.22584289e-02, 1.68079885e-02, 2.96234666e-02, 1.85028160e-02,
+       5.68540676e-02, 5.99070583e-02, 3.43220093e-02, 2.01439975e-01,
+       2.66875695e-01, 2.03108457e-01, 2.56948961e-01, 1.27459699e-01,
+       4.58614423e-01, 1.00000000e+00, 2.72823770e-01, 4.51742503e-02,
+       3.24436157e-02, 2.71899724e-02, 1.38995397e-02, 7.72902703e-03,
+       5.19093435e-03, 2.25073552e-03, 1.04319969e-03, 6.19648749e-04,
+       5.87359409e-04, 9.30905529e-04, 1.03637651e-03])
+init_guess_combined = np.array([2.94769779e-02, 1.90439418e-02, 1.14677243e-02, 1.36856826e-02,
+       1.30788831e-02, 1.83138967e-02, 1.16867488e-01, 7.34521375e-01,
+       5.40651957e-01, 1.56581305e-02, 1.43672498e-02, 1.51315293e-02,
+       2.06419004e-02, 8.43885137e-02, 7.68832107e-01, 7.48334015e-01,
+       5.45587734e-01, 1.08500957e-01, 5.61554104e-02, 2.80058525e-02,
+       8.26630143e-02, 5.44726864e-01, 3.31680236e-01, 3.92725715e-01,
+       4.37166576e-01, 7.60843560e-01, 2.67025635e-01, 9.07092003e-02,
+       4.73620154e-01, 1.00000000e+00, 2.74580849e-01, 4.09127715e-02,
+       3.92498669e-02, 2.34865886e-02, 1.47571660e-02, 5.53674472e-03,
+       3.05724195e-03, 2.23294956e-03, 1.19953783e-03, 8.38360164e-04,
+       1.05728533e-03, 1.49494163e-03, 1.85405644e-03])
+
+
+#init_guess_1 = np.random.random(ndim)
+#init_guess_2 = np.random.random(ndim)
+#init_guess_3 = np.random.random(ndim)
+#init_guess_4 = np.random.random(ndim)
+#init_guess_5 = np.random.random(ndim)
+#init_guess_combined = np.random.random(ndim)
 
 rel_norm_1 = ((np.random.rand(nwalkers, ndim) - 0.5) * 0.05 + 1) * init_guess_1
 rel_norm_2 = ((np.random.rand(nwalkers, ndim) - 0.5) * 0.05 + 1) * init_guess_2
@@ -735,17 +335,17 @@ n_wd_combined = wdlf_number_density_combined[
     wdlf_number_density_combined > 0.0
 ]
 
-n_wd_err_1 = n_wd_1 * 0.1
-n_wd_err_2 = n_wd_2 * 0.1
-n_wd_err_3 = n_wd_3 * 0.1
-n_wd_err_4 = n_wd_4 * 0.1
-n_wd_err_5 = n_wd_5 * 0.1
-n_wd_err_combined = n_wd_combined * 0.1
+n_wd_err_1 = n_wd_1 * 0.05
+n_wd_err_2 = n_wd_2 * 0.05
+n_wd_err_3 = n_wd_3 * 0.05
+n_wd_err_4 = n_wd_4 * 0.05
+n_wd_err_5 = n_wd_5 * 0.05
+n_wd_err_combined = n_wd_combined * 0.05
 
 n_step = 10000
 n_burn = 1000
 
-for i in range(100):
+for i in range(1):
     sampler_1 = emcee.EnsembleSampler(
         nwalkers,
         ndim,
@@ -1168,263 +768,163 @@ recomputed_wdlf_lsq_combined = np.nansum(
 )
 
 
-np.save("fig_02_partial_wdlf", partial_wdlf)
+np.save("SFH-WDLF-article/figure_data/fig_02_partial_wdlf", partial_wdlf)
 
-np.save("fig_02_sfh_total_1", sfh_total_1)
-np.save("fig_02_sfh_total_2", sfh_total_2)
-np.save("fig_02_sfh_total_3", sfh_total_3)
-np.save("fig_02_sfh_total_4", sfh_total_4)
-np.save("fig_02_sfh_total_5", sfh_total_5)
-np.save("fig_02_sfh_total_combined", sfh_total_combined)
+np.save("SFH-WDLF-article/figure_data/fig_02_sfh_total_1", sfh_total_1)
+np.save("SFH-WDLF-article/figure_data/fig_02_sfh_total_2", sfh_total_2)
+np.save("SFH-WDLF-article/figure_data/fig_02_sfh_total_3", sfh_total_3)
+np.save("SFH-WDLF-article/figure_data/fig_02_sfh_total_4", sfh_total_4)
+np.save("SFH-WDLF-article/figure_data/fig_02_sfh_total_5", sfh_total_5)
+np.save("SFH-WDLF-article/figure_data/fig_02_sfh_total_combined", sfh_total_combined)
 
-np.save("fig_02_input_wdlf_1", wdlf_reconstructed_1)
-np.save("fig_02_input_wdlf_2", wdlf_reconstructed_2)
-np.save("fig_02_input_wdlf_3", wdlf_reconstructed_3)
-np.save("fig_02_input_wdlf_4", wdlf_reconstructed_4)
-np.save("fig_02_input_wdlf_5", wdlf_reconstructed_5)
-np.save("fig_02_input_wdlf_combined", wdlf_reconstructed_combined)
+np.save("SFH-WDLF-article/figure_data/fig_02_input_wdlf_1", wdlf_number_density_1)
+np.save("SFH-WDLF-article/figure_data/fig_02_input_wdlf_2", wdlf_number_density_2)
+np.save("SFH-WDLF-article/figure_data/fig_02_input_wdlf_3", wdlf_number_density_3)
+np.save("SFH-WDLF-article/figure_data/fig_02_input_wdlf_4", wdlf_number_density_4)
+np.save("SFH-WDLF-article/figure_data/fig_02_input_wdlf_5", wdlf_number_density_5)
+np.save("SFH-WDLF-article/figure_data/fig_02_input_wdlf_combined", wdlf_number_density_combined)
 
-np.save("fig_02_solution_1", np.column_stack([partial_age, solution_1]))
-np.save("fig_02_solution_2", np.column_stack([partial_age, solution_2]))
-np.save("fig_02_solution_3", np.column_stack([partial_age, solution_3]))
-np.save("fig_02_solution_4", np.column_stack([partial_age, solution_4]))
-np.save("fig_02_solution_5", np.column_stack([partial_age, solution_5]))
+np.save("SFH-WDLF-article/figure_data/fig_02_solution_1", np.column_stack([partial_age, solution_1]))
+np.save("SFH-WDLF-article/figure_data/fig_02_solution_2", np.column_stack([partial_age, solution_2]))
+np.save("SFH-WDLF-article/figure_data/fig_02_solution_3", np.column_stack([partial_age, solution_3]))
+np.save("SFH-WDLF-article/figure_data/fig_02_solution_4", np.column_stack([partial_age, solution_4]))
+np.save("SFH-WDLF-article/figure_data/fig_02_solution_5", np.column_stack([partial_age, solution_5]))
 np.save(
-    "fig_02_solution_combined",
+    "SFH-WDLF-article/figure_data/fig_02_solution_combined",
     np.column_stack([partial_age, solution_combined]),
 )
 
 np.save(
-    "fig_02_solution_lsq_1", np.column_stack([partial_age, solution_lsq_1])
+    "SFH-WDLF-article/figure_data/fig_02_solution_lsq_1", np.column_stack([partial_age, solution_lsq_1])
 )
 np.save(
-    "fig_02_solution_lsq_2", np.column_stack([partial_age, solution_lsq_2])
+    "SFH-WDLF-article/figure_data/fig_02_solution_lsq_2", np.column_stack([partial_age, solution_lsq_2])
 )
 np.save(
-    "fig_02_solution_lsq_3", np.column_stack([partial_age, solution_lsq_3])
+    "SFH-WDLF-article/figure_data/fig_02_solution_lsq_3", np.column_stack([partial_age, solution_lsq_3])
 )
 np.save(
-    "fig_02_solution_lsq_4", np.column_stack([partial_age, solution_lsq_4])
+    "SFH-WDLF-article/figure_data/fig_02_solution_lsq_4", np.column_stack([partial_age, solution_lsq_4])
 )
 np.save(
-    "fig_02_solution_lsq_5", np.column_stack([partial_age, solution_lsq_5])
+    "SFH-WDLF-article/figure_data/fig_02_solution_lsq_5", np.column_stack([partial_age, solution_lsq_5])
 )
 np.save(
-    "fig_02_solution_lsq_combined",
+    "SFH-WDLF-article/figure_data/fig_02_solution_lsq_combined",
     np.column_stack([partial_age, solution_lsq_combined]),
 )
 
 np.save(
-    "fig_02_recomputed_wdlf_mcmc_1",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_1",
     np.column_stack([mag_bin, recomputed_wdlf_1]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_mcmc_2",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_2",
     np.column_stack([mag_bin, recomputed_wdlf_2]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_mcmc_3",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_3",
     np.column_stack([mag_bin, recomputed_wdlf_3]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_mcmc_4",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_4",
     np.column_stack([mag_bin, recomputed_wdlf_4]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_mcmc_5",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_5",
     np.column_stack([mag_bin, recomputed_wdlf_5]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_mcmc_combined",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_combined",
     np.column_stack([mag_bin, recomputed_wdlf_combined]),
 )
 
 np.save(
-    "fig_02_recomputed_wdlf_lsq_1",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_1",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_1]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_lsq_2",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_2",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_2]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_lsq_3",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_3",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_3]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_lsq_4",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_4",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_4]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_lsq_5",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_5",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_5]),
 )
 np.save(
-    "fig_02_recomputed_wdlf_lsq_combined",
+    "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_combined",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_combined]),
 )
 
+# Figure here
 fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
     nrows=3, ncols=1, figsize=(8, 10), height_ratios=(10, 3, 15)
 )
 ax_dummy1.axis("off")
 #
-ax2.plot(mag_bin, n_wd_1, ls=":", color="C0")
-ax2.plot(mag_bin, n_wd_2, ls=":", color="C1")
-ax2.plot(mag_bin, n_wd_3, ls=":", color="C2")
-ax2.plot(mag_bin, n_wd_4, ls=":", color="C3")
-ax2.plot(mag_bin, n_wd_5, ls=":", color="C4")
-ax2.plot(mag_bin, n_wd_combined, ls=":", color="C5")
-#
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_1 / np.nansum(recomputed_wdlf_1) * np.nansum(n_wd_1),
-    ls="dashed",
-    color="C0",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_2 / np.nansum(recomputed_wdlf_2) * np.nansum(n_wd_2),
-    ls="dashed",
-    color="C1",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_3 / np.nansum(recomputed_wdlf_3) * np.nansum(n_wd_3),
-    ls="dashed",
-    color="C2",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_4 / np.nansum(recomputed_wdlf_4) * np.nansum(n_wd_4),
-    ls="dashed",
-    color="C3",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_5 / np.nansum(recomputed_wdlf_5) * np.nansum(n_wd_5),
-    ls="dashed",
-    color="C4",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_combined
-    / np.nansum(recomputed_wdlf_combined)
-    * np.nansum(n_wd_combined),
-    ls="dashed",
-    color="C5",
-)
-#
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_1
-    / np.nansum(recomputed_wdlf_lsq_1)
-    * np.nansum(n_wd_1),
-    color="C0",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_2
-    / np.nansum(recomputed_wdlf_lsq_2)
-    * np.nansum(n_wd_2),
-    color="C1",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_3
-    / np.nansum(recomputed_wdlf_lsq_3)
-    * np.nansum(n_wd_3),
-    color="C2",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_4
-    / np.nansum(recomputed_wdlf_lsq_4)
-    * np.nansum(n_wd_4),
-    color="C3",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_5
-    / np.nansum(recomputed_wdlf_lsq_5)
-    * np.nansum(n_wd_5),
-    color="C4",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_combined
-    / np.nansum(recomputed_wdlf_lsq_combined)
-    * np.nansum(n_wd_combined),
-    color="C5",
-)
-#
-ax2.plot([1, 1], [1, 2], ls=":", color="black", label="Input")
-ax2.plot(
-    [1, 1], [1, 2], ls="dashed", color="black", label="Reconstructed (MCMC)"
-)
-ax2.plot([1, 1], [1, 2], ls="-", color="black", label="Reconstructed (lsq)")
-ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
-ax2.set_ylabel("log(arbitrary number density)")
-ax2.set_xlim(6.75, 18.25)
-ax2.set_ylim(1e-4, 5e-1)
-ax2.set_yscale("log")
-ax2.legend()
-ax2.grid()
 ax1.plot(age, sfh_total_1 / np.nanmax(sfh_total_1), ls=":", color="C0")
 ax1.plot(age, sfh_total_2 / np.nanmax(sfh_total_2), ls=":", color="C1")
-ax1.plot(age, sfh_total_3 / np.nanmax(sfh_total_3), ls=":", color="C1")
-ax1.plot(age, sfh_total_4 / np.nanmax(sfh_total_4), ls=":", color="C1")
-ax1.plot(age, sfh_total_5 / np.nanmax(sfh_total_5), ls=":", color="C1")
+ax1.plot(age, sfh_total_3 / np.nanmax(sfh_total_3), ls=":", color="C2")
+ax1.plot(age, sfh_total_4 / np.nanmax(sfh_total_4), ls=":", color="C3")
+ax1.plot(age, sfh_total_5 / np.nanmax(sfh_total_5), ls=":", color="C4")
 ax1.plot(
     age, sfh_total_combined / np.nanmax(sfh_total_combined), ls=":", color="C1"
 )
 ax1.fill_between(
     partial_age,
-    sfh_mcmc_lower_1 - sfh_mcmc_1 + solution_lsq_1,
-    sfh_mcmc_upper_1 - sfh_mcmc_1 + solution_lsq_1,
+    solution_lsq_1 - sfh_mcmc_lower_1,
+    solution_lsq_1 + sfh_mcmc_upper_1,
     step="mid",
-    color="darkgrey",
-    alpha=0.5,
+    color="C0",
+    alpha=0.3,
 )
 ax1.fill_between(
     partial_age,
-    sfh_mcmc_lower_2 - sfh_mcmc_2 + solution_lsq_2,
-    sfh_mcmc_upper_2 - sfh_mcmc_2 + solution_lsq_2,
+    solution_lsq_2 - sfh_mcmc_lower_2,
+    solution_lsq_2 + sfh_mcmc_upper_2,
     step="mid",
-    color="darkgrey",
-    alpha=0.5,
+    color="C1",
+    alpha=0.3,
 )
 ax1.fill_between(
     partial_age,
-    sfh_mcmc_lower_3 - sfh_mcmc_3 + solution_lsq_3,
-    sfh_mcmc_upper_3 - sfh_mcmc_3 + solution_lsq_3,
+    solution_lsq_3 - sfh_mcmc_lower_3,
+    solution_lsq_3 + sfh_mcmc_upper_3,
     step="mid",
-    color="darkgrey",
-    alpha=0.5,
+    color="C2",
+    alpha=0.3,
 )
 ax1.fill_between(
     partial_age,
-    sfh_mcmc_lower_4 - sfh_mcmc_4 + solution_lsq_4,
-    sfh_mcmc_upper_4 - sfh_mcmc_4 + solution_lsq_4,
+    solution_lsq_4 - sfh_mcmc_lower_4,
+    solution_lsq_4 + sfh_mcmc_upper_4,
     step="mid",
-    color="darkgrey",
-    alpha=0.5,
+    color="C3",
+    alpha=0.3,
 )
 ax1.fill_between(
     partial_age,
-    sfh_mcmc_lower_5 - sfh_mcmc_5 + solution_lsq_5,
-    sfh_mcmc_upper_5 - sfh_mcmc_5 + solution_lsq_5,
+    solution_lsq_5 - sfh_mcmc_lower_5,
+    solution_lsq_5 + sfh_mcmc_upper_5,
     step="mid",
-    color="darkgrey",
-    alpha=0.5,
+    color="C4",
+    alpha=0.3,
 )
 ax1.fill_between(
     partial_age,
-    sfh_mcmc_lower_combined - sfh_mcmc_combined + solution_lsq_combined,
-    sfh_mcmc_upper_combined - sfh_mcmc_combined + solution_lsq_combined,
+    solution_lsq_combined - sfh_mcmc_lower_combined,
+    solution_lsq_combined + sfh_mcmc_upper_combined,
     step="mid",
-    color="darkgrey",
-    alpha=0.5,
+    color="C5",
+    alpha=0.3,
 )
 ax1.step(partial_age, sfh_mcmc_1, ls="dashed", where="mid", color="C0")
 ax1.step(partial_age, sfh_mcmc_2, ls="dashed", where="mid", color="C1")
@@ -1443,11 +943,113 @@ ax1.plot([-1, -1], [-1, -2], ls="dashed", color="black", label="MCMC")
 ax1.plot([-1, -1], [-1, -2], ls="-", color="black", label="lsq-refined")
 ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
-ax1.set_xlim(0, 15)
-ax1.set_ylim(bottom=0)
+ax1.set_xlim(0, 14)
+ax1.set_ylim(0, 1.4)
 ax1.set_xlabel("Lookback time / Gyr")
 ax1.set_ylabel("Relative SFR")
 ax1.legend()
+#
+ax2.plot(mag_bin, n_wd_1, ls=":", color="C0")
+ax2.plot(mag_bin, n_wd_2 * 0.2, ls=":", color="C1")
+ax2.plot(mag_bin, n_wd_3 * 0.2**2, ls=":", color="C2")
+ax2.plot(mag_bin, n_wd_4 * 0.2**3, ls=":", color="C3")
+ax2.plot(mag_bin, n_wd_5 * 0.2**4, ls=":", color="C4")
+ax2.plot(mag_bin, n_wd_combined * 0.2**5, ls=":", color="C5")
+#
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_1 / np.nansum(recomputed_wdlf_1) * np.nansum(n_wd_1),
+    ls="dashed",
+    color="C0",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_2 / np.nansum(recomputed_wdlf_2) * np.nansum(n_wd_2) * 0.2,
+    ls="dashed",
+    color="C1",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_3 / np.nansum(recomputed_wdlf_3) * np.nansum(n_wd_3) * 0.2**2,
+    ls="dashed",
+    color="C2",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_4 / np.nansum(recomputed_wdlf_4) * np.nansum(n_wd_4) * 0.2**3,
+    ls="dashed",
+    color="C3",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_5 / np.nansum(recomputed_wdlf_5) * np.nansum(n_wd_5) * 0.2**4,
+    ls="dashed",
+    color="C4",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_combined
+    / np.nansum(recomputed_wdlf_combined)
+    * np.nansum(n_wd_combined) * 0.2**5,
+    ls="dashed",
+    color="C5",
+)
+#
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_lsq_1
+    / np.nansum(recomputed_wdlf_lsq_1)
+    * np.nansum(n_wd_1),
+    color="C0",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_lsq_2
+    / np.nansum(recomputed_wdlf_lsq_2)
+    * np.nansum(n_wd_2) * 0.2,
+    color="C1",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_lsq_3
+    / np.nansum(recomputed_wdlf_lsq_3)
+    * np.nansum(n_wd_3) * 0.2**2,
+    color="C2",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_lsq_4
+    / np.nansum(recomputed_wdlf_lsq_4)
+    * np.nansum(n_wd_4) * 0.2**3,
+    color="C3",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_lsq_5
+    / np.nansum(recomputed_wdlf_lsq_5)
+    * np.nansum(n_wd_5) * 0.2**4,
+    color="C4",
+)
+ax2.plot(
+    mag_bin,
+    recomputed_wdlf_lsq_combined
+    / np.nansum(recomputed_wdlf_lsq_combined)
+    * np.nansum(n_wd_combined) * 0.2**5,
+    color="C5",
+)
+#
+ax2.plot([1, 1], [1, 2], ls=":", color="black", label="Input")
+ax2.plot(
+    [1, 1], [1, 2], ls="dashed", color="black", label="Reconstructed (MCMC)"
+)
+ax2.plot([1, 1], [1, 2], ls="-", color="black", label="Reconstructed (lsq)")
+ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
+ax2.set_ylabel("log(arbitrary number density)")
+ax2.set_xlim(6, 18)
+ax2.set_ylim(1e-8, 2e-1)
+ax2.set_yscale("log")
+ax2.legend()
+ax2.grid()
 plt.subplots_adjust(
     top=0.975, bottom=0.075, left=0.125, right=0.975, hspace=0.075
 )
@@ -1464,6 +1066,6 @@ ax2b.set_xlim(ax2.get_xlim())
 ax2b.set_xticks(ax2.get_xticks())
 ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
 
-plt.subplots_adjust(top=0.995, bottom=0.06, left=0.1, right=0.995, hspace=0.01)
+plt.subplots_adjust(top=0.99, bottom=0.06, left=0.1, right=0.98, hspace=0.01)
 
 plt.savefig(os.path.join(figure_folder, "fig_02_two_bursts_wdlf.png"))

@@ -33,8 +33,8 @@ gcns_wdlf = np.load(
 # n_bin_optimal = 32
 
 # Load the mapped pwdlf age-mag resolution
-pwdlf_mapping_bin_optimal = np.load("pwdlf_bin_optimal_mapping.npy")
-mag_obs_optimal, resolution_optimal = np.load("mbol_resolution.npy").T
+pwdlf_mapping_bin_optimal = np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy")
+mag_obs_optimal, resolution_optimal = np.load("SFH-WDLF-article/figure_data/mbol_resolution.npy").T
 
 mag_obs_optimal_bin_edges = np.append(
     mag_obs_optimal - resolution_optimal * 0.5,
@@ -63,7 +63,7 @@ obs_wdlf_err_optimal = e_gen_optimal**0.5 / resolution_optimal
 data = []
 age_list_1 = np.arange(0.049, 0.100, 0.001)
 age_list_2 = np.arange(0.100, 0.350, 0.005)
-age_list_3 = np.arange(0.35, 15.01, 0.01)
+age_list_3 = np.arange(0.35, 14.01, 0.01)
 age_list_3dp = np.concatenate((age_list_1, age_list_2))
 age_list_2dp = age_list_3
 
@@ -96,7 +96,6 @@ mag_pwdlf = data[0][:, 0]
 
 
 # Stack up the pwdlfs to the desired resolution
-
 partial_wdlf_optimal = []
 partial_age_optimal = []
 for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
@@ -127,12 +126,24 @@ obs_err_normed /= np.sum(obs_normed)
 obs_normed /= np.sum(obs_normed)
 
 
-initial_weights = np.random.random(ndim_optimal)
+initial_weights = np.array([0.00551151, 0.06175424, 0.06712927, 0.04074231, 0.02908356,
+       0.03956408, 0.04786902, 0.0379228 , 0.04157336, 0.03191537,
+       0.03727162, 0.04293682, 0.04471473, 0.05757802, 0.04638133,
+       0.04624371, 0.03943034, 0.03822381, 0.02749433, 0.02468706,
+       0.01702197, 0.00721138, 0.0079604 , 0.00781887, 0.01991802,
+       0.02611155, 0.01376862, 0.02818676, 0.0105257 , 0.007734  ,
+       0.01709898, 0.01605067, 0.00198814, 0.00105481, 0.00059211,
+       0.00042537, 0.00023568, 0.00021709, 0.00026019, 0.00037764,
+       0.00036333, 0.00035681, 0.00053505])
 
-n_step = 100000
-n_burn = 10000
+#initial_weights = np.random.random(ndim_optimal)
 
-for i in range(100):
+
+
+n_step = 5000
+n_burn = 500
+
+for i in range(50):
     print(i)
     rel_norm_optimal = np.vstack(
         [
@@ -172,7 +183,7 @@ for i in range(100):
     solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
 
     np.save(
-        "gcns_sfh_optimal_resolution_bin_optimal.npy",
+        "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy",
         np.column_stack(
             (
                 partial_age_optimal,
@@ -183,7 +194,7 @@ for i in range(100):
         ),
     )
     np.save(
-        "gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy",
+        "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy",
         np.column_stack(
             (mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal)
         ),
@@ -217,4 +228,4 @@ lsq_res = least_squares(
     gtol=1e-12,
 )
 
-np.save("gcns_sfh_optimal_resolution_lsq_solution", lsq_res)
+np.save("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution", lsq_res)

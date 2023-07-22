@@ -12,7 +12,7 @@ plt.rcParams.update({"font.size": 12})
 data = []
 age_list_1 = np.arange(0.049, 0.100, 0.001)
 age_list_2 = np.arange(0.100, 0.350, 0.005)
-age_list_3 = np.arange(0.35, 15.01, 0.01)
+age_list_3 = np.arange(0.35, 14.01, 0.01)
 age_list_3dp = np.concatenate((age_list_1, age_list_2))
 age_list_2dp = age_list_3
 
@@ -84,35 +84,37 @@ ax2.set_xscale('log')
 #    *np.load("mbol_err_upper_bound.npy").T, s=0
 #)
 mbol_err_upper_bound = interpolate.UnivariateSpline(
-    *np.load("mbol_err_median.npy").T, s=0
+    *np.load("SFH-WDLF-article/figure_data/mbol_err_mean.npy").T, s=0
 )
 
 
 # Nyquist sampling for resolving 2 gaussian peaks -> 2.355 sigma.
 
-bin_optimal = []
-bin_optimal_idx = []
+mag_bin = []
+mag_bin_idx = []
 # to group the constituent pwdlfs into the optimal set of pwdlfs
-bin_optimal_pwdlf = np.zeros_like(age[1:]).astype("int")
+mag_bin_pwdlf = np.zeros_like(age[1:]).astype("int")
 j = 0
 bin_number = 0
 stop = False
-# the bin_optimal is the bin edges
-bin_optimal.append(mag_at_peak_density[0])
+# the mag_bin is the bin edges
+mag_bin.append(mag_at_peak_density[0])
 for i, a in enumerate(age):
     if i < j:
         continue
-    start = mag_resolution_itp(a)
+    start = float(mag_resolution_itp(a))
     end = start
     j = i
     carry_on = True
+    if j >= len(age) - 1:
+        carry_on = False
     while carry_on:
         tmp = mag_resolution_itp(age[j + 1]) - mag_resolution_itp(age[j])
         print(j, end + tmp - start)
+        mag_bin_pwdlf[j] = bin_number
         # Nyquist sampling: sample 2 times for every FWHM (i.e. 2.355 sigma)
-        if end + tmp - start < mbol_err_upper_bound(end) * 1.1775:
+        if end + tmp - start < mbol_err_upper_bound(start) * 1.1775:
             end = end + tmp
-            bin_optimal_pwdlf[j] = bin_number
             j += 1
             if j >= len(age) - 1:
                 carry_on = False
@@ -120,24 +122,34 @@ for i, a in enumerate(age):
         else:
             carry_on = False
             bin_number += 1
-    bin_optimal.append(end)
-    bin_optimal_idx.append(i)
+    mag_bin.append(end)
+    mag_bin_idx.append(i)
     if stop:
         break
 
-bin_optimal = np.array(bin_optimal)
+# these the the bin edges
+mag_bin = np.array(mag_bin)
 
-resolution_optimal = np.diff(bin_optimal)
+# if magnitudes don't reach 18, pad to 18 in 0.2 mag increment
+if max(mag_bin) < 18.0:
+    _n = int(np.round((18.0 - mag_bin[-1]) / 0.2))
+    mag_bin = np.append(mag_bin[:-1], np.linspace(mag_bin[-1], 18.0, _n))
 
-bin_center = (bin_optimal[:-1] + bin_optimal[1:]) / 2.0
+resolution_optimal = np.diff(mag_bin)
+
+# get the bin centre
+mag_bin = (mag_bin[1:] + mag_bin[:-1]) / 2.0
+pwdlf_mapping_mag_bin = np.insert(mag_bin_pwdlf, 0, 0)
 
 ax3.plot(
-    bin_center,
+    mag_bin,
     resolution_optimal,
 )
 ax3.set_ylabel("magnitude resolution")
 ax3.set_xlabel(r"M$_{\mathrm{bol}}$ [mag]")
-ax3.set_xticks(np.arange(4, 19, 1))
+ax3.set_xticks(np.arange(6, 19, 1))
+ax3.set_ylim(0,3.25)
+ax3.grid()
 
 # Get the Mbol to Age relation
 atm = AtmosphereModelReader()
@@ -157,7 +169,7 @@ fig.savefig(os.path.join(figure_folder, "fig_04_magnitude_resoltuion.png"))
 
 
 # save the pdwdlf mapping
-np.save("pwdlf_bin_optimal_mapping.npy", bin_optimal_pwdlf)
+np.save("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy", mag_bin_pwdlf)
 
 # save the Mbol resolution
-np.save("mbol_resolution.npy", np.column_stack((bin_center, resolution_optimal)))
+np.save("SFH-WDLF-article/figure_data/mbol_resolution.npy", np.column_stack((mag_bin, resolution_optimal)))

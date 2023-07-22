@@ -56,10 +56,10 @@ mag_pwdlf = data[0][:, 0]
     solution_optimal,
     solution_lower,
     solution_upper,
-) = np.load("gcns_sfh_optimal_resolution_bin_optimal.npy").T
+) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy").T
 # The lsq solution
 lsq_res = np.load(
-    "gcns_sfh_optimal_resolution_lsq_solution.npy", allow_pickle=True
+    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution.npy", allow_pickle=True
 ).item()
 solution_optimal_lsq = lsq_res.x
 solution_optimal_jac = lsq_res.jac
@@ -72,12 +72,12 @@ stdev = np.sqrt(np.diag(cov))
 
 # from running sfh_mcmc_gcns_wdlf_optimal_resolution.py
 mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal = np.load(
-    "gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
+    "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
 ).T
 
 # Load the mapped pwdlf age-mag resolution
 pwdlf_mapping_bin_optimal = np.insert(
-    np.load("pwdlf_bin_optimal_mapping.npy"), 0, 0
+    np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy"), 0, 0
 )
 
 # Stack up the pwdlfs to the desired resolution
@@ -145,7 +145,7 @@ ax1.fill_between(
 
 ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
-ax1.set_xlim(0, 15)
+ax1.set_xlim(0, 14)
 ax1.set_ylim(bottom=0)
 ax1.set_xlabel("Lookback time / Gyr")
 ax1.set_ylabel("Relative Star Formation Rate")
