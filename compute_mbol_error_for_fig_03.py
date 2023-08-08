@@ -10,7 +10,7 @@ from WDPhotTools.fitter import WDfitter
 
 from scipy.interpolate import splrep, splev
 
-
+"""
 def get_envelope_v1(x, y):
     x_list, y_list = list(x), list(y)
     assert len(x_list) == len(y_list)
@@ -46,7 +46,7 @@ def get_envelope_v1(x, y):
         ub = np.array([y, ub]).max(axis=0)
         lb = np.array([y, lb]).min(axis=0)
         return ub, lb
-
+"""
 
 data_edr3 = np.load(
     "pubgcnswdlf-crossmatched-full-edr3-catalogue.npz", allow_pickle=True

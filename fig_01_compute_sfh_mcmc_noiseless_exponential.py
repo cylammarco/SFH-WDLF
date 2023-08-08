@@ -752,197 +752,23 @@ np.save(
     np.column_stack([mag_bin_5, recomputed_wdlf_lsq_5]),
 )
 
-fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(10, 3, 15)
+np.save(
+    "SFH-WDLF-article/figure_data/fig_01_mcmc_1.npy",
+    np.column_stack([sfh_mcmc_1, sfh_mcmc_lower_1, sfh_mcmc_upper_1])
 )
-#
-ax1.plot(age, sfh_1 / np.nanmax(sfh_1), ls=":", color="C0")
-ax1.plot(age, sfh_2 / np.nanmax(sfh_2), ls=":", color="C1")
-ax1.plot(age, sfh_3 / np.nanmax(sfh_3), ls=":", color="C2")
-ax1.plot(age, sfh_4 / np.nanmax(sfh_4), ls=":", color="C3")
-ax1.plot(age, sfh_5 / np.nanmax(sfh_5), ls=":", color="C4")
-#
-ax1.fill_between(
-    partial_age,
-    sfh_mcmc_lower_1,
-    sfh_mcmc_upper_1,
-    step="mid",
-    color="darkgrey",
-    alpha=0.5,
+np.save(
+    "SFH-WDLF-article/figure_data/fig_01_mcmc_2.npy",
+    np.column_stack([sfh_mcmc_2, sfh_mcmc_lower_2, sfh_mcmc_upper_2])
 )
-ax1.fill_between(
-    partial_age,
-    sfh_mcmc_lower_2,
-    sfh_mcmc_upper_2,
-    step="mid",
-    color="darkgrey",
-    alpha=0.5,
+np.save(
+    "SFH-WDLF-article/figure_data/fig_01_mcmc_3.npy",
+    np.column_stack([sfh_mcmc_3, sfh_mcmc_lower_3, sfh_mcmc_upper_3])
 )
-ax1.fill_between(
-    partial_age,
-    sfh_mcmc_lower_3,
-    sfh_mcmc_upper_3,
-    step="mid",
-    color="darkgrey",
-    alpha=0.5,
+np.save(
+    "SFH-WDLF-article/figure_data/fig_01_mcmc_4.npy",
+    np.column_stack([sfh_mcmc_4, sfh_mcmc_lower_4, sfh_mcmc_upper_4])
 )
-ax1.fill_between(
-    partial_age,
-    sfh_mcmc_lower_4,
-    sfh_mcmc_upper_4,
-    step="mid",
-    color="darkgrey",
-    alpha=0.5,
+np.save(
+    "SFH-WDLF-article/figure_data/fig_01_mcmc_5.npy",
+    np.column_stack([sfh_mcmc_5, sfh_mcmc_lower_5, sfh_mcmc_upper_5])
 )
-ax1.fill_between(
-    partial_age,
-    sfh_mcmc_lower_5,
-    sfh_mcmc_upper_5,
-    step="mid",
-    color="darkgrey",
-    alpha=0.5,
-)
-#
-ax1.step(partial_age, solution_1, ls="dashed", where="mid", color="C0")
-ax1.step(partial_age, solution_2, ls="dashed", where="mid", color="C1")
-ax1.step(partial_age, solution_3, ls="dashed", where="mid", color="C2")
-ax1.step(partial_age, solution_4, ls="dashed", where="mid", color="C3")
-ax1.step(partial_age, solution_5, ls="dashed", where="mid", color="C4")
-#
-ax1.step(partial_age, solution_lsq_1, where="mid", color="C0")
-ax1.step(partial_age, solution_lsq_2, where="mid", color="C1")
-ax1.step(partial_age, solution_lsq_3, where="mid", color="C2")
-ax1.step(partial_age, solution_lsq_4, where="mid", color="C3")
-ax1.step(partial_age, solution_lsq_5, where="mid", color="C4")
-#
-ax1.plot([-1, -1], [-1, -2], ls=":", color="black", label="Input")
-ax1.plot([-1, -1], [-1, -2], ls="dashed", color="black", label="MCMC")
-ax1.plot([-1, -1], [-1, -2], ls="-", color="black", label="lsq-refined")
-#
-ax1.grid()
-ax1.set_xticks(np.arange(0, 15, 2))
-ax1.set_xlim(0, 14)
-ax1.set_ylim(bottom=0)
-ax1.set_xlabel("Lookback t / Gyr")
-ax1.set_ylabel("Relative SFR")
-ax1.legend()
-#
-ax_dummy1.axis("off")
-#
-ax2.plot(
-    mag_bin,
-    wdlf_1_number_density / np.nansum(wdlf_1_number_density),
-    ls=":",
-    color="C0",
-)
-ax2.plot(
-    mag_bin,
-    wdlf_2_number_density / np.nansum(wdlf_2_number_density) * 0.2,
-    ls=":",
-    color="C1",
-)
-ax2.plot(
-    mag_bin,
-    wdlf_3_number_density / np.nansum(wdlf_3_number_density) * 0.2**2,
-    ls=":",
-    color="C2",
-)
-ax2.plot(
-    mag_bin,
-    wdlf_4_number_density / np.nansum(wdlf_4_number_density) * 0.2**3,
-    ls=":",
-    color="C3",
-)
-ax2.plot(
-    mag_bin,
-    wdlf_5_number_density / np.nansum(wdlf_5_number_density) * 0.2**4,
-    ls=":",
-    color="C4",
-)
-#
-ax2.plot(
-    mag_bin_1,
-    recomputed_wdlf_1 / np.nansum(recomputed_wdlf_1),
-    ls="dashed",
-    color="C0",
-)
-ax2.plot(
-    mag_bin_2,
-    recomputed_wdlf_2 / np.nansum(recomputed_wdlf_2) * 0.2,
-    ls="dashed",
-    color="C1",
-)
-ax2.plot(
-    mag_bin_3,
-    recomputed_wdlf_3 / np.nansum(recomputed_wdlf_3) * 0.2**2,
-    ls="dashed",
-    color="C2",
-)
-ax2.plot(
-    mag_bin_4,
-    recomputed_wdlf_4 / np.nansum(recomputed_wdlf_4) * 0.2**3,
-    ls="dashed",
-    color="C3",
-)
-ax2.plot(
-    mag_bin_5,
-    recomputed_wdlf_5 / np.nansum(recomputed_wdlf_5) * 0.2**4,
-    ls="dashed",
-    color="C4",
-)
-#
-ax2.plot(
-    mag_bin_1,
-    recomputed_wdlf_lsq_1 / np.nansum(recomputed_wdlf_lsq_1),
-    color="C0",
-)
-ax2.plot(
-    mag_bin_2,
-    recomputed_wdlf_lsq_2 / np.nansum(recomputed_wdlf_lsq_2) * 0.2,
-    color="C1",
-)
-ax2.plot(
-    mag_bin_3,
-    recomputed_wdlf_lsq_3 / np.nansum(recomputed_wdlf_lsq_3) * 0.2**2,
-    color="C2",
-)
-ax2.plot(
-    mag_bin_4,
-    recomputed_wdlf_lsq_4 / np.nansum(recomputed_wdlf_lsq_4) * 0.2**3,
-    color="C3",
-)
-ax2.plot(
-    mag_bin_5,
-    recomputed_wdlf_lsq_5 / np.nansum(recomputed_wdlf_lsq_5) * 0.2**4,
-    color="C4",
-)
-#
-ax2.plot([1, 1], [1, 2], ls=":", color="black", label="Input")
-ax2.plot(
-    [1, 1], [1, 2], ls="dashed", color="black", label="Reconstructed (MCMC)"
-)
-ax2.plot([1, 1], [1, 2], ls="-", color="black", label="Reconstructed (lsq)")
-#
-ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
-ax2.set_ylabel("log(arbitrary number density)")
-ax2.set_xlim(6.00, 18.00)
-ax2.set_ylim(1e-8, 2e-1)
-ax2.set_yscale("log")
-ax2.legend()
-ax2.grid()
-#
-# Get the Mbol to Age relation
-atm = AtmosphereModelReader()
-Mbol_to_age = atm.interp_am(dependent="age")
-age_ticks = Mbol_to_age(8.0, ax2.get_xticks())
-age_ticklabels = [f"{i/1e9:.3f}" for i in age_ticks]
-
-# make the top axis
-ax2b = ax2.twiny()
-ax2b.set_xlim(ax2.get_xlim())
-ax2b.set_xticks(ax2.get_xticks())
-ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
-
-plt.subplots_adjust(top=0.99, bottom=0.06, left=0.1, right=0.985, hspace=0.01)
-
-plt.savefig(os.path.join(figure_folder, "fig_01_exponential_decay_wdlf.png"))

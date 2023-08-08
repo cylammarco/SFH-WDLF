@@ -97,20 +97,21 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_age_optimal.append(age_temp / age_count)
 
 
-plt.figure(1, figsize=(8, 8))
+plt.figure(1, figsize=(8, 6))
 plt.clf()
-for i in partial_wdlf_optimal:
-    plt.plot(mag_obs_optimal, i, color="black", lw=0.5)
+for i, _wdlf in enumerate(partial_wdlf_optimal):
+    plt.plot(mag_obs_optimal, _wdlf, color="C0", alpha=0.3+0.7*i/len(partial_wdlf_optimal), lw=0.5)
 
 plt.xlim(6.0, 18.0)
-plt.xlabel("Mbol / mag")
+plt.ylim(1e5, 3e9)
+plt.xlabel("Mbol [mag]")
 plt.ylabel("Arbitrary number density")
 plt.yscale("log")
 plt.tight_layout()
 plt.savefig(
     os.path.join(
         figure_folder,
-        "fig_05_basis_pwdlf.png",
+        "fig_04_basis_pwdlf.png",
     )
 )
 
@@ -129,8 +130,8 @@ wdlf_err_high = np.nansum(
     (solution_upper) * np.array(partial_wdlf_optimal).T, axis=1
 )
 
-fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(10, 3, 15)
+fig1, (ax2, ax_dummy1, ax1) = plt.subplots(
+    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(15, 2, 10)
 )
 
 ax1.step(partial_age_optimal, solution_optimal, where="post", label="MCMC")
@@ -147,7 +148,7 @@ ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 ax1.set_ylim(bottom=0)
-ax1.set_xlabel("Lookback time / Gyr")
+ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel("Relative Star Formation Rate")
 ax1.legend()
 
@@ -191,7 +192,7 @@ ax2.fill_between(
 )
 
 ax2.xaxis.set_ticks(np.arange(6.0, 18.1, 1.0))
-ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
+ax2.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
 ax2.set_ylabel("log(arbitrary number density)")
 ax2.set_xlim(5.75, 18.25)
 ax2.set_ylim(1e-6, 5e-3)
@@ -210,12 +211,20 @@ ax2b = ax2.twiny()
 ax2b.set_xlim(ax2.get_xlim())
 ax2b.set_xticks(ax2.get_xticks())
 ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
+ax2b.set_xlabel("Cooling age [Gyr]")
 
-plt.subplots_adjust(top=0.995, bottom=0.06, left=0.1, right=0.995, hspace=0.01)
+"""
+# change colour of the upper axis
+ax2b.xaxis.label.set_color('blue')
+ax2b.spines['top'].set_color('blue')
+ax2b.tick_params(axis='x', colors='blue')
+"""
+
+plt.subplots_adjust(top=0.9, bottom=0.06, left=0.1, right=0.98, hspace=0.01)
 
 fig1.savefig(
     os.path.join(
         figure_folder,
-        "fig_06_gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.png",
+        "fig_05_gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.png",
     )
 )

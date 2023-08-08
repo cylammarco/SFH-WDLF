@@ -7,7 +7,6 @@ from scipy import interpolate
 from scipy.optimize import least_squares
 from spectres import spectres
 from WDPhotTools import theoretical_lf
-from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
 
 
 figure_folder = "SFH-WDLF-article/figures"
@@ -814,6 +813,33 @@ np.save(
     np.column_stack([partial_age, solution_lsq_combined]),
 )
 
+
+np.save(
+    "SFH-WDLF-article/figure_data/fig_02_mcmc_1",
+    np.column_stack([sfh_mcmc_1, sfh_mcmc_lower_1, sfh_mcmc_upper_1]),
+)
+np.save(
+    "SFH-WDLF-article/figure_data/fig_02_mcmc_2",
+    np.column_stack([sfh_mcmc_2, sfh_mcmc_lower_2, sfh_mcmc_upper_2]),
+)
+np.save(
+    "SFH-WDLF-article/figure_data/fig_02_mcmc_3",
+    np.column_stack([sfh_mcmc_3, sfh_mcmc_lower_3, sfh_mcmc_upper_3]),
+)
+np.save(
+    "SFH-WDLF-article/figure_data/fig_02_mcmc_4",
+    np.column_stack([sfh_mcmc_4, sfh_mcmc_lower_4, sfh_mcmc_upper_4]),
+)
+np.save(
+    "SFH-WDLF-article/figure_data/fig_02_mcmc_5",
+    np.column_stack([sfh_mcmc_5, sfh_mcmc_lower_5, sfh_mcmc_upper_5]),
+)
+np.save(
+    "SFH-WDLF-article/figure_data/fig_02_mcmc_combined",
+    np.column_stack([sfh_mcmc_combined, sfh_mcmc_lower_combined, sfh_mcmc_upper_combined]),
+)
+
+
 np.save(
     "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_mcmc_1",
     np.column_stack([mag_bin, recomputed_wdlf_1]),
@@ -863,209 +889,3 @@ np.save(
     "SFH-WDLF-article/figure_data/fig_02_recomputed_wdlf_lsq_combined",
     np.column_stack([mag_bin, recomputed_wdlf_lsq_combined]),
 )
-
-# Figure here
-fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(10, 3, 15)
-)
-ax_dummy1.axis("off")
-#
-ax1.plot(age, sfh_total_1 / np.nanmax(sfh_total_1), ls=":", color="C0")
-ax1.plot(age, sfh_total_2 / np.nanmax(sfh_total_2), ls=":", color="C1")
-ax1.plot(age, sfh_total_3 / np.nanmax(sfh_total_3), ls=":", color="C2")
-ax1.plot(age, sfh_total_4 / np.nanmax(sfh_total_4), ls=":", color="C3")
-ax1.plot(age, sfh_total_5 / np.nanmax(sfh_total_5), ls=":", color="C4")
-ax1.plot(
-    age, sfh_total_combined / np.nanmax(sfh_total_combined), ls=":", color="C1"
-)
-ax1.fill_between(
-    partial_age,
-    solution_lsq_1 - sfh_mcmc_lower_1,
-    solution_lsq_1 + sfh_mcmc_upper_1,
-    step="mid",
-    color="C0",
-    alpha=0.3,
-)
-ax1.fill_between(
-    partial_age,
-    solution_lsq_2 - sfh_mcmc_lower_2,
-    solution_lsq_2 + sfh_mcmc_upper_2,
-    step="mid",
-    color="C1",
-    alpha=0.3,
-)
-ax1.fill_between(
-    partial_age,
-    solution_lsq_3 - sfh_mcmc_lower_3,
-    solution_lsq_3 + sfh_mcmc_upper_3,
-    step="mid",
-    color="C2",
-    alpha=0.3,
-)
-ax1.fill_between(
-    partial_age,
-    solution_lsq_4 - sfh_mcmc_lower_4,
-    solution_lsq_4 + sfh_mcmc_upper_4,
-    step="mid",
-    color="C3",
-    alpha=0.3,
-)
-ax1.fill_between(
-    partial_age,
-    solution_lsq_5 - sfh_mcmc_lower_5,
-    solution_lsq_5 + sfh_mcmc_upper_5,
-    step="mid",
-    color="C4",
-    alpha=0.3,
-)
-ax1.fill_between(
-    partial_age,
-    solution_lsq_combined - sfh_mcmc_lower_combined,
-    solution_lsq_combined + sfh_mcmc_upper_combined,
-    step="mid",
-    color="C5",
-    alpha=0.3,
-)
-ax1.step(partial_age, sfh_mcmc_1, ls="dashed", where="mid", color="C0")
-ax1.step(partial_age, sfh_mcmc_2, ls="dashed", where="mid", color="C1")
-ax1.step(partial_age, sfh_mcmc_3, ls="dashed", where="mid", color="C2")
-ax1.step(partial_age, sfh_mcmc_4, ls="dashed", where="mid", color="C3")
-ax1.step(partial_age, sfh_mcmc_5, ls="dashed", where="mid", color="C4")
-ax1.step(partial_age, sfh_mcmc_combined, ls="dashed", where="mid", color="C5")
-ax1.step(partial_age, solution_lsq_1, where="mid", color="C0")
-ax1.step(partial_age, solution_lsq_2, where="mid", color="C1")
-ax1.step(partial_age, solution_lsq_3, where="mid", color="C2")
-ax1.step(partial_age, solution_lsq_4, where="mid", color="C3")
-ax1.step(partial_age, solution_lsq_5, where="mid", color="C4")
-ax1.step(partial_age, solution_lsq_combined, where="mid", color="C5")
-ax1.plot([-1, -1], [-1, -2], ls=":", color="black", label="Input")
-ax1.plot([-1, -1], [-1, -2], ls="dashed", color="black", label="MCMC")
-ax1.plot([-1, -1], [-1, -2], ls="-", color="black", label="lsq-refined")
-ax1.grid()
-ax1.set_xticks(np.arange(0, 15, 2))
-ax1.set_xlim(0, 14)
-ax1.set_ylim(0, 1.4)
-ax1.set_xlabel("Lookback time / Gyr")
-ax1.set_ylabel("Relative SFR")
-ax1.legend()
-#
-ax2.plot(mag_bin, n_wd_1, ls=":", color="C0")
-ax2.plot(mag_bin, n_wd_2 * 0.2, ls=":", color="C1")
-ax2.plot(mag_bin, n_wd_3 * 0.2**2, ls=":", color="C2")
-ax2.plot(mag_bin, n_wd_4 * 0.2**3, ls=":", color="C3")
-ax2.plot(mag_bin, n_wd_5 * 0.2**4, ls=":", color="C4")
-ax2.plot(mag_bin, n_wd_combined * 0.2**5, ls=":", color="C5")
-#
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_1 / np.nansum(recomputed_wdlf_1) * np.nansum(n_wd_1),
-    ls="dashed",
-    color="C0",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_2 / np.nansum(recomputed_wdlf_2) * np.nansum(n_wd_2) * 0.2,
-    ls="dashed",
-    color="C1",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_3 / np.nansum(recomputed_wdlf_3) * np.nansum(n_wd_3) * 0.2**2,
-    ls="dashed",
-    color="C2",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_4 / np.nansum(recomputed_wdlf_4) * np.nansum(n_wd_4) * 0.2**3,
-    ls="dashed",
-    color="C3",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_5 / np.nansum(recomputed_wdlf_5) * np.nansum(n_wd_5) * 0.2**4,
-    ls="dashed",
-    color="C4",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_combined
-    / np.nansum(recomputed_wdlf_combined)
-    * np.nansum(n_wd_combined) * 0.2**5,
-    ls="dashed",
-    color="C5",
-)
-#
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_1
-    / np.nansum(recomputed_wdlf_lsq_1)
-    * np.nansum(n_wd_1),
-    color="C0",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_2
-    / np.nansum(recomputed_wdlf_lsq_2)
-    * np.nansum(n_wd_2) * 0.2,
-    color="C1",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_3
-    / np.nansum(recomputed_wdlf_lsq_3)
-    * np.nansum(n_wd_3) * 0.2**2,
-    color="C2",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_4
-    / np.nansum(recomputed_wdlf_lsq_4)
-    * np.nansum(n_wd_4) * 0.2**3,
-    color="C3",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_5
-    / np.nansum(recomputed_wdlf_lsq_5)
-    * np.nansum(n_wd_5) * 0.2**4,
-    color="C4",
-)
-ax2.plot(
-    mag_bin,
-    recomputed_wdlf_lsq_combined
-    / np.nansum(recomputed_wdlf_lsq_combined)
-    * np.nansum(n_wd_combined) * 0.2**5,
-    color="C5",
-)
-#
-ax2.plot([1, 1], [1, 2], ls=":", color="black", label="Input")
-ax2.plot(
-    [1, 1], [1, 2], ls="dashed", color="black", label="Reconstructed (MCMC)"
-)
-ax2.plot([1, 1], [1, 2], ls="-", color="black", label="Reconstructed (lsq)")
-ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
-ax2.set_ylabel("log(arbitrary number density)")
-ax2.set_xlim(6, 18)
-ax2.set_ylim(1e-8, 2e-1)
-ax2.set_yscale("log")
-ax2.legend()
-ax2.grid()
-plt.subplots_adjust(
-    top=0.975, bottom=0.075, left=0.125, right=0.975, hspace=0.075
-)
-
-# Get the Mbol to Age relation
-atm = AtmosphereModelReader()
-Mbol_to_age = atm.interp_am(dependent="age")
-age_ticks = Mbol_to_age(8.0, ax2.get_xticks())
-age_ticklabels = [f"{i/1e9:.3f}" for i in age_ticks]
-
-# make the top axis
-ax2b = ax2.twiny()
-ax2b.set_xlim(ax2.get_xlim())
-ax2b.set_xticks(ax2.get_xticks())
-ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
-
-plt.subplots_adjust(top=0.99, bottom=0.06, left=0.1, right=0.98, hspace=0.01)
-
-plt.savefig(os.path.join(figure_folder, "fig_02_two_bursts_wdlf.png"))
