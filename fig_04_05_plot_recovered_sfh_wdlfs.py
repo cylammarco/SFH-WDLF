@@ -97,6 +97,7 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_age_optimal.append(age_temp / age_count)
 
 
+
 plt.figure(1, figsize=(8, 6))
 plt.clf()
 for i, _wdlf in enumerate(partial_wdlf_optimal):
@@ -130,17 +131,51 @@ wdlf_err_high = np.nansum(
     (solution_upper) * np.array(partial_wdlf_optimal).T, axis=1
 )
 
+
+
+# append for plotting the first bin
+partial_age_optimal = np.insert(
+    partial_age_optimal, 0, 2.0 * partial_age_optimal[0] - partial_age_optimal[1]
+)
+solution_optimal_lsq = np.insert(solution_optimal_lsq, 0, 0.0)
+solution_optimal = np.insert(solution_optimal, 0, 0.0)
+solution_upper = np.insert(solution_upper, 0, 0.0)
+solution_lower = np.insert(solution_lower, 0, 0.0)
+# append for plotting the last bin
+partial_age_optimal = np.append(
+    partial_age_optimal, 2.0 * partial_age_optimal[-1] - partial_age_optimal[-2]
+)
+solution_optimal_lsq = np.append(solution_optimal_lsq, 0.0)
+solution_optimal = np.append(solution_optimal, 0.0)
+solution_upper = np.append(solution_upper, 0.0)
+solution_lower = np.append(solution_lower, 0.0)
+
+
+
+
+normalisation_this_work = (
+    np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
+)
+bin_norm_this_work = np.concatenate(
+    [
+        [partial_age_optimal[1] - partial_age_optimal[0]],
+        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
+        / 2.0,
+        [partial_age_optimal[-1] - partial_age_optimal[-2]],
+    ]
+)
+
 fig1, (ax2, ax_dummy1, ax1) = plt.subplots(
     nrows=3, ncols=1, figsize=(8, 10), height_ratios=(15, 2, 10)
 )
 
-ax1.step(partial_age_optimal, solution_optimal, where="post", label="MCMC")
-ax1.step(partial_age_optimal, solution_optimal_lsq, where="post", label="lsq")
+ax1.step(partial_age_optimal, solution_optimal * normalisation_this_work / bin_norm_this_work, where="mid", label="MCMC")
+ax1.step(partial_age_optimal, solution_optimal_lsq * normalisation_this_work / bin_norm_this_work, where="mid", label="lsq")
 ax1.fill_between(
     partial_age_optimal,
-    solution_lower,
-    solution_upper,
-    step="post",
+    solution_lower * normalisation_this_work / bin_norm_this_work,
+    solution_upper * normalisation_this_work / bin_norm_this_work,
+    step="mid",
     color="lightgrey",
 )
 
@@ -149,7 +184,7 @@ ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 ax1.set_ylim(bottom=0)
 ax1.set_xlabel("Lookback time [Gyr]")
-ax1.set_ylabel("Relative Star Formation Rate")
+ax1.set_ylabel("Star Formation Rate [M$_{\odot}$ Gyr$^{-1}$ pc$^{-3}$]")
 ax1.legend()
 
 ax_dummy1.axis("off")
@@ -193,7 +228,7 @@ ax2.fill_between(
 
 ax2.xaxis.set_ticks(np.arange(6.0, 18.1, 1.0))
 ax2.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
-ax2.set_ylabel("log(arbitrary number density)")
+ax2.set_ylabel("log(number density)")
 ax2.set_xlim(5.75, 18.25)
 ax2.set_ylim(1e-6, 5e-3)
 ax2.set_yscale("log")
@@ -220,7 +255,7 @@ ax2b.spines['top'].set_color('blue')
 ax2b.tick_params(axis='x', colors='blue')
 """
 
-plt.subplots_adjust(top=0.9, bottom=0.06, left=0.1, right=0.98, hspace=0.01)
+plt.subplots_adjust(top=0.9, bottom=0.06, left=0.12, right=0.98, hspace=0.01)
 
 fig1.savefig(
     os.path.join(

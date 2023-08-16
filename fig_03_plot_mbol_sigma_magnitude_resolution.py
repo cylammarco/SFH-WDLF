@@ -162,7 +162,7 @@ ax1.plot(
     mag_mean[(mag_mean > 2.0) & (mag_mean < 18.25)],
     err_mean[(mag_mean > 2.0) & (mag_mean < 18.25)],
     lw=1,
-    label=r"Median",
+    label=r"Weight-mean",
     color="black",
     ls="dashed",
 )
