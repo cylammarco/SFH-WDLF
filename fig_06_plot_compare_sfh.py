@@ -308,7 +308,17 @@ plot(age, skewed_gaussian_thin + skewed_gaussian_thick + skewed_gaussian_halo)
 
 
 # This adjusts the SFH to per Gyr
-bin_norm_this_work = np.concatenate(
+age_bin_norm_this_work = np.concatenate(
+    [
+        [partial_age_optimal[1] - partial_age_optimal[0]],
+        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
+        / 2.0,
+        [partial_age_optimal[-1] - partial_age_optimal[-2]],
+    ]
+)
+
+# This allows for "integrateing" the WDLF
+mag_bin_norm_this_work = np.concatenate(
     [
         [mag_obs_optimal[1] - mag_obs_optimal[0]],
         (np.diff(mag_obs_optimal)[:-1] + np.diff(mag_obs_optimal)[1:]) / 2.0,
@@ -317,8 +327,8 @@ bin_norm_this_work = np.concatenate(
 )
 # This gives the total number
 normalisation_this_work = (
-    np.sum(obs_wdlf_optimal * bin_norm_this_work)
-    / np.sum(recomputed_wdlf_optimal_lsq * bin_norm_this_work)
+    np.sum(obs_wdlf_optimal * mag_bin_norm_this_work)
+    / np.sum(recomputed_wdlf_optimal_lsq * mag_bin_norm_this_work)
     * 1e9
 )
 
@@ -335,12 +345,7 @@ normalisation_tremblay = (
     * normalisation_this_work
     / np.sum(tremblay_sfh)
 )
-normalisation_reid = (
-    np.sum(solution_optimal_lsq)
-    * normalisation_this_work
-    / np.sum(reid_sfh)
-    / 0.5
-)
+normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
 fig1 = plt.figure(100, figsize=(8, 8))
 plt.clf()
@@ -348,21 +353,21 @@ ax1 = plt.gca()
 # plot data from this work
 ax1.step(
     partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work / bin_norm_this_work,
+    solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work,
     where="mid",
     color="black",
     label="This work",
 )
 ax1.errorbar(
     partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work / bin_norm_this_work,
+    solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work,
     yerr=[
         (solution_optimal - solution_lower)
         * normalisation_this_work
-        / bin_norm_this_work,
+        / age_bin_norm_this_work,
         (solution_upper - solution_optimal)
         * normalisation_this_work
-        / bin_norm_this_work,
+        / age_bin_norm_this_work,
     ],
     fmt="+",
     color="black",
@@ -374,24 +379,29 @@ ax1.step(
     cignoni_sfh * normalisation_cignoni,
     where="mid",
     color="C0",
-    linestyle="dashed",
+    linestyle="-",
 )
 ax1.vlines(
     cignoni_time,
     (cignoni_sfh - cignoni_sigma_low) * normalisation_cignoni,
     (cignoni_sfh + cignoni_sigma_up) * normalisation_cignoni,
     color="C0",
-    linestyle="dashed",
+    linestyle="-",
     label="Cignoni+ 2006",
 )
 
 # plot Reid+ data
 ax1.step(
     reid_time,
-    reid_sfh * normalisation_reid,
+    reid_sfh
+    / np.max(reid_sfh)
+    * np.max(
+        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
+    ),
     where="mid",
     color="C1",
-    linestyle="dashed",
+    linestyle=":",
+    lw=2,
     label="Reid+ 2007",
 )
 
@@ -399,19 +409,24 @@ ax1.step(
 # plot Tremblay+ data
 ax1.step(
     tremblay_time,
-    tremblay_sfh * normalisation_tremblay,
+    tremblay_sfh
+    / np.max(tremblay_sfh)
+    * np.max(
+        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
+    ),
     where="mid",
     color="C2",
-    linestyle="dashed",
-)
-ax1.vlines(
-    tremblay_time,
-    (tremblay_sfh - tremblay_sigma_low) * normalisation_tremblay,
-    (tremblay_sfh + tremblay_sigma_up) * normalisation_tremblay,
-    linestyle="dashed",
-    color="C2",
     label="Tremblay+ 2014",
+    linestyle=":",
 )
+# ax1.vlines(
+#    tremblay_time,
+#    (tremblay_sfh - tremblay_sigma_low) / np.max(tremblay_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
+#    (tremblay_sfh + tremblay_sigma_up) / np.max(tremblay_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
+#    linestyle=":",
+#    color="C2",
+#    label="Tremblay+ 2014",
+# )
 
 """
 # plot Isern data
@@ -433,19 +448,24 @@ ax1.vlines(
 # plot Mor+ data
 ax1.step(
     mor_time,
-    mor_sfh * normalisation_mor,
+    mor_sfh
+    / np.max(mor_sfh)
+    * np.max(
+        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
+    ),
     where="mid",
     color="C4",
-    linestyle="-.",
-)
-ax1.vlines(
-    mor_time,
-    (mor_sfh - mor_sigma_low) * normalisation_mor,
-    (mor_sfh + mor_sigma_up) * normalisation_mor,
-    linestyle="-.",
-    color="C4",
     label="Mor+ 2019",
+    linestyle="dashed",
 )
+# ax1.vlines(
+#    mor_time,
+#    (mor_sfh - mor_sigma_low) / np.max(mor_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
+#    (mor_sfh + mor_sigma_up) / np.max(mor_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
+#    linestyle="dashed",
+#    color="C4",
+#    label="Mor+ 2019",
+# )
 
 """
 # plot Torres+ data
@@ -461,7 +481,7 @@ ax1.step(
 ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
-ax1.set_ylim(bottom=0)
+ax1.set_ylim(0, 0.01)
 ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel(r"Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
 ax1.legend()
