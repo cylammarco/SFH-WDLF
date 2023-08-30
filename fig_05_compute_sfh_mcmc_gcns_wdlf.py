@@ -29,12 +29,18 @@ def log_probability(rel_norm, obs_normed, err_normed, model_list):
 gcns_wdlf = np.load(
     "pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz"
 )["data"]
+gcns_wdlf_20pc_subset = gcns_wdlf[gcns_wdlf["dpc"] <= 20.0]
+
 
 # n_bin_optimal = 32
 
 # Load the mapped pwdlf age-mag resolution
-pwdlf_mapping_bin_optimal = np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy")
-mag_obs_optimal, resolution_optimal = np.load("SFH-WDLF-article/figure_data/mbol_resolution.npy").T
+pwdlf_mapping_bin_optimal = np.load(
+    "SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy"
+)
+mag_obs_optimal, resolution_optimal = np.load(
+    "SFH-WDLF-article/figure_data/mbol_resolution.npy"
+).T
 
 mag_obs_optimal_bin_edges = np.append(
     mag_obs_optimal - resolution_optimal * 0.5,
@@ -55,9 +61,29 @@ e_gen_optimal, _ = np.histogram(
     weights=0.01 / gcns_wdlf["Vgen"] ** 2.0,
 )
 
+# 20pc sample
+h_gen_optimal_20pc_subset, b_optimal_20pc_subset = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"],
+)
+
+e_gen_optimal_20pc_subset, _ = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"] ** 2.0,
+)
+
+
 obs_wdlf_optimal = h_gen_optimal / resolution_optimal
 obs_wdlf_err_optimal = e_gen_optimal**0.5 / resolution_optimal
 
+obs_wdlf_optimal_20pc_subset = h_gen_optimal_20pc_subset / resolution_optimal
+obs_wdlf_err_optimal_20pc_subset = (
+    e_gen_optimal_20pc_subset**0.5 / resolution_optimal
+)
 
 # Load the pwdlfs
 data = []
@@ -115,6 +141,9 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
 pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[
     :, obs_wdlf_optimal > 0.0
 ]
+pwdlf_model_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)[
+    :, obs_wdlf_optimal_20pc_subset > 0.0
+]
 
 nwalkers_optimal = 250
 
@@ -125,19 +154,112 @@ obs_err_normed = obs_wdlf_err_optimal[obs_wdlf_optimal > 0.0]
 obs_err_normed /= np.sum(obs_normed)
 obs_normed /= np.sum(obs_normed)
 
+obs_normed_20pc_subset = obs_wdlf_optimal_20pc_subset[
+    obs_wdlf_optimal_20pc_subset > 0.0
+]
+obs_err_normed_20pc_subset = obs_wdlf_err_optimal_20pc_subset[
+    obs_wdlf_optimal_20pc_subset > 0.0
+]
+obs_err_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)
+obs_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)
 
-initial_weights = np.array([0.00551151, 0.06175424, 0.06712927, 0.04074231, 0.02908356,
-       0.03956408, 0.04786902, 0.0379228 , 0.04157336, 0.03191537,
-       0.03727162, 0.04293682, 0.04471473, 0.05757802, 0.04638133,
-       0.04624371, 0.03943034, 0.03822381, 0.02749433, 0.02468706,
-       0.01702197, 0.00721138, 0.0079604 , 0.00781887, 0.01991802,
-       0.02611155, 0.01376862, 0.02818676, 0.0105257 , 0.007734  ,
-       0.01709898, 0.01605067, 0.00198814, 0.00105481, 0.00059211,
-       0.00042537, 0.00023568, 0.00021709, 0.00026019, 0.00037764,
-       0.00036333, 0.00035681, 0.00053505])
+initial_weights = np.array(
+    [
+        0.00551151,
+        0.06175424,
+        0.06712927,
+        0.04074231,
+        0.02908356,
+        0.03956408,
+        0.04786902,
+        0.0379228,
+        0.04157336,
+        0.03191537,
+        0.03727162,
+        0.04293682,
+        0.04471473,
+        0.05757802,
+        0.04638133,
+        0.04624371,
+        0.03943034,
+        0.03822381,
+        0.02749433,
+        0.02468706,
+        0.01702197,
+        0.00721138,
+        0.0079604,
+        0.00781887,
+        0.01991802,
+        0.02611155,
+        0.01376862,
+        0.02818676,
+        0.0105257,
+        0.007734,
+        0.01709898,
+        0.01605067,
+        0.00198814,
+        0.00105481,
+        0.00059211,
+        0.00042537,
+        0.00023568,
+        0.00021709,
+        0.00026019,
+        0.00037764,
+        0.00036333,
+        0.00035681,
+        0.00053505,
+    ]
+)
 
-#initial_weights = np.random.random(ndim_optimal)
+initial_weights_20pc_subset = np.array(
+    [
+        0.00551151,
+        0.06175424,
+        0.06712927,
+        0.04074231,
+        0.02908356,
+        0.03956408,
+        0.04786902,
+        0.0379228,
+        0.04157336,
+        0.03191537,
+        0.03727162,
+        0.04293682,
+        0.04471473,
+        0.05757802,
+        0.04638133,
+        0.04624371,
+        0.03943034,
+        0.03822381,
+        0.02749433,
+        0.02468706,
+        0.01702197,
+        0.00721138,
+        0.0079604,
+        0.00781887,
+        0.01991802,
+        0.02611155,
+        0.01376862,
+        0.02818676,
+        0.0105257,
+        0.007734,
+        0.01709898,
+        0.01605067,
+        0.00198814,
+        0.00105481,
+        0.00059211,
+        0.00042537,
+        0.00023568,
+        0.00021709,
+        0.00026019,
+        0.00037764,
+        0.00036333,
+        0.00035681,
+        0.00053505,
+    ]
+)
 
+# initial_weights = np.random.random(ndim_optimal)
 
 
 n_step = 5000
@@ -201,6 +323,71 @@ for i in range(50):
     )
 
 
+for i in range(50):
+    print(i)
+    rel_norm_optimal_20pc_subset = np.vstack(
+        [
+            np.random.normal(
+                initial_weights_20pc_subset, initial_weights_20pc_subset * 0.1
+            )
+            for i in range(nwalkers_optimal)
+        ]
+    )
+    sampler_optimal_20pc_subset = emcee.EnsembleSampler(
+        nwalkers_optimal,
+        ndim_optimal,
+        log_probability,
+        args=(
+            obs_normed_20pc_subset,
+            obs_err_normed_20pc_subset,
+            pwdlf_model_optimal_20pc_subset,
+        ),
+    )
+    sampler_optimal_20pc_subset.run_mcmc(
+        rel_norm_optimal_20pc_subset, n_step, progress=True
+    )
+    flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(
+        discard=n_burn, flat=True
+    )
+    solution_optimal_20pc_subset = np.zeros(ndim_optimal)
+    solution_lower_20pc_subset = np.zeros(ndim_optimal)
+    solution_upper_20pc_subset = np.zeros(ndim_optimal)
+    for i in range(ndim_optimal):
+        (
+            solution_lower_20pc_subset[i],
+            solution_optimal_20pc_subset[i],
+            solution_upper_20pc_subset[i],
+        ) = np.percentile(
+            flat_samples_optimal_20pc_subset[:, i],
+            [31.7310508, 50.0, 68.2689492],
+        )
+    initial_weights_20pc_subset = solution_optimal_20pc_subset
+    solution_optimal_normed_20pc_subset = (
+        solution_optimal_20pc_subset / np.nansum(solution_optimal_20pc_subset)
+    )
+    np.save(
+        "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy",
+        np.column_stack(
+            (
+                partial_age_optimal,
+                solution_optimal_20pc_subset,
+                solution_lower_20pc_subset,
+                solution_upper_20pc_subset,
+            )
+        ),
+    )
+    np.save(
+        "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal_20pc_subset.npy",
+        np.column_stack(
+            (
+                mag_obs_optimal,
+                obs_wdlf_optimal_20pc_subset,
+                obs_wdlf_err_optimal_20pc_subset,
+            )
+        ),
+    )
+
+
 sfh_mcmc_lower = np.zeros(ndim_optimal)
 sfh_mcmc = np.zeros(ndim_optimal)
 sfh_mcmc_upper = np.zeros(ndim_optimal)
@@ -210,9 +397,23 @@ for i in range(ndim_optimal):
     )
 
 
+sfh_mcmc_lower_20pc_subset = np.zeros(ndim_optimal)
+sfh_mcmc_20pc_subset = np.zeros(ndim_optimal)
+sfh_mcmc_upper_20pc_subset = np.zeros(ndim_optimal)
+for i in range(ndim_optimal):
+    (
+        sfh_mcmc_lower_20pc_subset[i],
+        sfh_mcmc_20pc_subset[i],
+        sfh_mcmc_upper_20pc_subset[i],
+    ) = np.percentile(
+        flat_samples_optimal_20pc_subset[:, i], [31.7310508, 50.0, 68.2689492]
+    )
+
 sfh_mcmc_lower /= np.nanmax(sfh_mcmc)
 sfh_mcmc_upper /= np.nanmax(sfh_mcmc)
 
+sfh_mcmc_lower_20pc_subset /= np.nanmax(sfh_mcmc_20pc_subset)
+sfh_mcmc_upper_20pc_subset /= np.nanmax(sfh_mcmc_20pc_subset)
 
 # Finally refining with a minimizer
 lsq_res = least_squares(
@@ -228,4 +429,24 @@ lsq_res = least_squares(
     gtol=1e-12,
 )
 
-np.save("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution", lsq_res)
+lsq_res_20pc_subset = least_squares(
+    log_probability,
+    solution_optimal_20pc_subset,
+    args=(
+        obs_normed_20pc_subset,
+        obs_err_normed_20pc_subset,
+        pwdlf_model_optimal_20pc_subset,
+    ),
+    ftol=1e-12,
+    xtol=1e-12,
+    gtol=1e-12,
+)
+
+np.save(
+    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution",
+    lsq_res,
+)
+np.save(
+    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution_20pc_subset",
+    lsq_res_20pc_subset,
+)
