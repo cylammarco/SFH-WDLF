@@ -61,13 +61,29 @@ mag_pwdlf = data[0][:, 0]
 ) = np.load(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy"
 ).T
+(
+    partial_age_optimal,
+    solution_optimal_20pc_subset,
+    solution_lower_20pc_subset,
+    solution_upper_20pc_subset,
+) = np.load(
+    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy"
+).T
+
 # The lsq solution
 lsq_res = np.load(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution.npy",
     allow_pickle=True,
 ).item()
+lsq_res_20pc_subset = np.load(
+    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution_20pc_subset.npy",
+    allow_pickle=True,
+).item()
 solution_optimal_lsq = lsq_res.x
 solution_optimal_jac = lsq_res.jac
+
+solution_optimal_lsq_20pc_subset = lsq_res_20pc_subset.x
+solution_optimal_jac_20pc_subset = lsq_res_20pc_subset.jac
 
 _, _s, _vh = np.linalg.svd(solution_optimal_jac, full_matrices=False)
 tol = np.finfo(float).eps * _s[0] * max(solution_optimal_jac.shape)
@@ -78,6 +94,13 @@ stdev = np.sqrt(np.diag(cov))
 # from running sfh_mcmc_gcns_wdlf_optimal_resolution.py
 mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal = np.load(
     "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
+).T
+(
+    mag_obs_optimal,
+    obs_wdlf_optimal_20pc_subset,
+    obs_wdlf_err_optimal_20pc_subset,
+) = np.load(
+    "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal_20pc_subset.npy"
 ).T
 
 # Load the mapped pwdlf age-mag resolution
@@ -103,8 +126,17 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
 
 
 # only compute for the wdlf integrated number density
+recomputed_wdlf_optimal = np.nansum(
+    solution_optimal * np.array(partial_wdlf_optimal).T, axis=1
+)
 recomputed_wdlf_optimal_lsq = np.nansum(
     solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1
+)
+recomputed_wdlf_optimal_20pc_subset = np.nansum(
+    solution_optimal_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1
+)
+recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
+    solution_optimal_lsq_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1
 )
 
 # append for plotting the first bin
@@ -117,6 +149,13 @@ solution_optimal_lsq = np.insert(solution_optimal_lsq, 0, 0.0)
 solution_optimal = np.insert(solution_optimal, 0, 0.0)
 solution_upper = np.insert(solution_upper, 0, 0.0)
 solution_lower = np.insert(solution_lower, 0, 0.0)
+solution_optimal_lsq_20pc_subset = np.insert(
+    solution_optimal_lsq_20pc_subset, 0, 0.0
+)
+solution_optimal_20pc_subset = np.insert(solution_optimal_20pc_subset, 0, 0.0)
+solution_upper_20pc_subset = np.insert(solution_upper_20pc_subset, 0, 0.0)
+solution_lower_20pc_subset = np.insert(solution_lower_20pc_subset, 0, 0.0)
+
 # append for plotting the last bin
 partial_age_optimal = np.append(
     partial_age_optimal,
@@ -126,6 +165,12 @@ solution_optimal_lsq = np.append(solution_optimal_lsq, 0.0)
 solution_optimal = np.append(solution_optimal, 0.0)
 solution_upper = np.append(solution_upper, 0.0)
 solution_lower = np.append(solution_lower, 0.0)
+solution_optimal_lsq_20pc_subset = np.append(
+    solution_optimal_lsq_20pc_subset, 0.0
+)
+solution_optimal_20pc_subset = np.append(solution_optimal_20pc_subset, 0.0)
+solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
+solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
 
 """
 # construct the inverse ifmr, aka fimr
@@ -327,10 +372,22 @@ mag_bin_norm_this_work = np.concatenate(
 )
 # This gives the total number
 normalisation_this_work = (
-    np.sum(obs_wdlf_optimal * mag_bin_norm_this_work)
-    / np.sum(recomputed_wdlf_optimal_lsq * mag_bin_norm_this_work)
+    np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
+)
+normalisation_this_work_20pc_subset = (
+    np.sum(obs_wdlf_optimal_20pc_subset)
+    / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset)
     * 1e9
 )
+bin_norm_this_work = np.concatenate(
+    [
+        [partial_age_optimal[1] - partial_age_optimal[0]],
+        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
+        / 2.0,
+        [partial_age_optimal[-1] - partial_age_optimal[-2]],
+    ]
+)
+
 
 normalisation_cignoni = (
     np.sum(solution_optimal_lsq)
@@ -371,6 +428,17 @@ ax1.errorbar(
     ],
     fmt="+",
     color="black",
+)
+ax1.step(
+    partial_age_optimal,
+    solution_optimal_lsq_20pc_subset
+    * 100
+    * normalisation_this_work_20pc_subset
+    / bin_norm_this_work,
+    where="mid",
+    label="20pc subset [x100]",
+    color="black",
+    alpha=0.5,
 )
 
 # plot Cignoni+ data
