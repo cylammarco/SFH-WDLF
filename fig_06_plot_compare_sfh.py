@@ -432,11 +432,11 @@ ax1.errorbar(
 ax1.step(
     partial_age_optimal,
     solution_optimal_lsq_20pc_subset
-    * 100
+    * 200
     * normalisation_this_work_20pc_subset
     / bin_norm_this_work,
     where="mid",
-    label="20pc subset [x100]",
+    label="20pc subset [x200]",
     color="black",
     alpha=0.5,
 )

@@ -223,7 +223,7 @@ ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 ax1.set_ylim(0, 6.25)
-ax1.set_xlabel("Lookback time / Gyr")
+ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel("Relative SFR")
 ax1.legend()
 #
@@ -336,7 +336,7 @@ ax2.plot(
     [1, 1], [1, 2], ls="dashed", color="black", label="Reconstructed (MCMC)"
 )
 ax2.plot([1, 1], [1, 2], ls="-", color="black", label="Reconstructed (lsq)")
-ax2.set_xlabel(r"M${_\mathrm{bol}}$ / mag")
+ax2.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
 ax2.set_ylabel("log(arbitrary number density)")
 ax2.set_xlim(6, 18)
 ax2.set_ylim(1e-8, 2e-1)

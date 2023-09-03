@@ -2,6 +2,7 @@ import os
 
 from matplotlib import pyplot as plt
 import numpy as np
+from pynverse import inversefunc
 from scipy.signal import medfilt
 from scipy import interpolate
 from scipy.interpolate import UnivariateSpline
@@ -140,7 +141,7 @@ for i, d in enumerate(data):
 mag_resolution_itp = interpolate.UnivariateSpline(
     age, mag_at_peak_density, s=len(age) / 150, k=5
 )
-
+age_resolution_itp = inversefunc(mag_resolution_itp)
 
 fig, (ax1, ax_dummy, ax3, ax_dummy_2, ax5) = plt.subplots(
     nrows=5, ncols=1, figsize=(8, 12), height_ratios=(10, 2, 10, 2, 10)
@@ -206,7 +207,6 @@ mbol_err_upper_bound = interpolate.UnivariateSpline(
 
 
 # Nyquist sampling for resolving 2 gaussian peaks -> 2.355 sigma.
-
 mag_bin = []
 mag_bin_idx = []
 # to group the constituent pwdlfs into the optimal set of pwdlfs
@@ -247,7 +247,7 @@ for i, a in enumerate(age):
 
 mag_bin_full = mag_bin.copy()
 
-# these the the bin edges
+# these are the bin edges
 mag_bin = np.array(mag_bin)
 mag_bin = mag_bin[mag_bin <=16.5]
 
@@ -256,6 +256,7 @@ if max(mag_bin) < 20.0:
     _n = int(np.round((20.0 - mag_bin[-1]) / (mag_bin[-1] - mag_bin[-2])))
     mag_bin = np.append(mag_bin[:-1], np.linspace(mag_bin[-1], 20.0, _n))
 
+mag_bin_age = age_resolution_itp(mag_bin)
 resolution_optimal = np.diff(mag_bin)
 
 # get the bin centre

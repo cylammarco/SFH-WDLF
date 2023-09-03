@@ -2,8 +2,9 @@ import os
 
 from matplotlib import pyplot as plt
 import numpy as np
+from pynverse import inversefunc
 from spectres import spectres
-from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
+from scipy import interpolate
 
 
 plt.rcParams.update({"font.size": 12})
@@ -48,8 +49,17 @@ for i in age_list_2dp:
         )
     )
 
-
 mag_pwdlf = data[0][:, 0]
+
+mag_at_peak_density = np.zeros_like(age)
+for i, d in enumerate(data):
+    mag_at_peak_density[i] = mag_pwdlf[np.argmax(d[:, 1])]
+
+
+mag_resolution_itp = interpolate.UnivariateSpline(
+    age, mag_at_peak_density, s=len(age) / 150, k=5
+)
+age_resolution_itp = inversefunc(mag_resolution_itp)
 
 
 (
@@ -272,20 +282,20 @@ ax1.fill_between(
 ax1.step(
     partial_age_optimal,
     solution_optimal_20pc_subset
-    * 100
+    * 200
     * normalisation_this_work_20pc_subset
     / bin_norm_this_work,
     where="mid",
-    label="MCMC (20pc subset) [x100]",
+    label="MCMC (20pc subset) [x200]",
 )
 ax1.step(
     partial_age_optimal,
     solution_optimal_lsq_20pc_subset
-    * 100
+    * 200
     * normalisation_this_work_20pc_subset
     / bin_norm_this_work,
     where="mid",
-    label="lsq (20pc subset) [x100]",
+    label="lsq (20pc subset) [x200]",
 )
 ax1.fill_between(
     partial_age_optimal,
@@ -305,7 +315,7 @@ ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 ax1.set_ylim(bottom=0)
 ax1.set_xlabel("Lookback time [Gyr]")
-ax1.set_ylabel("Star Formation Rate [M$_{\odot}$ Gyr$^{-1}$ pc$^{-3}$]")
+ax1.set_ylabel("Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
 ax1.legend()
 
 ax_dummy1.axis("off")
@@ -383,17 +393,17 @@ ax2.legend(loc="lower center")
 ax2.grid()
 
 # Get the Mbol to Age relation
-atm = AtmosphereModelReader()
-Mbol_to_age = atm.interp_am(dependent="age")
-age_ticks = Mbol_to_age(8.0, np.arange(6.0, 18.1, 1.0))
-age_ticklabels = [f"{i/1e9:.3f}" for i in age_ticks]
+age_ticks = age_resolution_itp(np.arange(6.0, 18.1, 0.5))
+age_ticklabels = [f"{i:.3f}" for i in age_ticks]
+
 
 # make the top axis
 ax2b = ax2.twiny()
 ax2b.set_xlim(ax2.get_xlim())
 ax2b.set_xticks(ax2.get_xticks())
+ax2b.xaxis.set_ticks(np.arange(6.0, 18.1, 0.5))
 ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
-ax2b.set_xlabel("Cooling age [Gyr]")
+ax2b.set_xlabel("Lookback time [Gyr]")
 
 """
 # change colour of the upper axis
