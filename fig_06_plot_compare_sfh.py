@@ -111,6 +111,7 @@ pwdlf_mapping_bin_optimal = np.insert(
 # Stack up the pwdlfs to the desired resolution
 partial_wdlf_optimal = []
 partial_age_optimal = []
+partial_age_optimal.append(0.0)
 for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     pwdlf_temp = np.zeros_like(mag_obs_optimal)
     age_temp = 0.0
@@ -119,11 +120,11 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
         pwdlf_temp += spectres(
             mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0
         )
-        age_temp += age[i]
-        age_count += 1
+        age_temp = age[i]
     partial_wdlf_optimal.append(pwdlf_temp)
-    partial_age_optimal.append(age_temp / age_count)
+    partial_age_optimal.append(age_temp)
 
+partial_age_optimal.append(15.0)
 
 # only compute for the wdlf integrated number density
 recomputed_wdlf_optimal = np.nansum(
@@ -140,11 +141,6 @@ recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
 )
 
 # append for plotting the first bin
-partial_age_optimal = np.insert(
-    partial_age_optimal,
-    0,
-    2.0 * partial_age_optimal[0] - partial_age_optimal[1],
-)
 solution_optimal_lsq = np.insert(solution_optimal_lsq, 0, 0.0)
 solution_optimal = np.insert(solution_optimal, 0, 0.0)
 solution_upper = np.insert(solution_upper, 0, 0.0)
@@ -157,10 +153,6 @@ solution_upper_20pc_subset = np.insert(solution_upper_20pc_subset, 0, 0.0)
 solution_lower_20pc_subset = np.insert(solution_lower_20pc_subset, 0, 0.0)
 
 # append for plotting the last bin
-partial_age_optimal = np.append(
-    partial_age_optimal,
-    2.0 * partial_age_optimal[-1] - partial_age_optimal[-2],
-)
 solution_optimal_lsq = np.append(solution_optimal_lsq, 0.0)
 solution_optimal = np.append(solution_optimal, 0.0)
 solution_upper = np.append(solution_upper, 0.0)
@@ -432,13 +424,13 @@ ax1.errorbar(
 ax1.step(
     partial_age_optimal,
     solution_optimal_lsq_20pc_subset
-    * 200
+    * 100
     * normalisation_this_work_20pc_subset
     / bin_norm_this_work,
     where="mid",
-    label="20pc subset [x200]",
+    label="20pc subset [x100]",
     color="black",
-    alpha=0.5,
+    alpha=0.6,
 )
 
 # plot Cignoni+ data
@@ -549,10 +541,10 @@ ax1.step(
 ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
-ax1.set_ylim(0, 0.01)
+ax1.set_ylim(0, 0.0085)
 ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel(r"Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
-ax1.legend()
+ax1.legend(loc='upper right')
 
 
 plt.tight_layout()
