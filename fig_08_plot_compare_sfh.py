@@ -293,6 +293,24 @@ reid_sfh = np.insert(reid_sfh, 0, 0.0)
 reid_time = np.append(reid_time, 2.0 * reid_time[-1] - reid_time[-2])
 reid_sfh = np.append(reid_sfh, 0.0)
 
+# Bernard+ 2018
+bernard_data = np.loadtxt(
+    r"SFH-WDLF-article\figure_data\fig_06_bernard_2018_sfh.csv", delimiter=","
+)
+bernard_time = bernard_data[:, 0]
+bernard_sfh = bernard_data[:, 1]
+# append for plotting the first bin
+bernard_time = np.insert(
+    bernard_time, 0, 2.0 * bernard_time[0] - bernard_time[1]
+)
+bernard_sfh = np.insert(bernard_sfh, 0, 0.0)
+# append for plotting the last bin
+bernard_time = np.append(
+    bernard_time, 2.0 * bernard_time[-1] - bernard_time[-2]
+)
+bernard_sfh = np.append(bernard_sfh, 0.0)
+
+
 # Torres+ 2021
 torres_data = np.loadtxt(
     r"SFH-WDLF-article\figure_data\fig_06_torres_2021_sfh.csv", delimiter=","
@@ -305,6 +323,29 @@ torres_sfh = np.insert(torres_sfh, 0, 0.0)
 # append for plotting the last bin
 torres_time = np.append(torres_time, 2.0 * torres_time[-1] - torres_time[-2])
 torres_sfh = np.append(torres_sfh, 0.0)
+
+# Xiang & Rix 2022
+xiang_data = np.load("41586_2022_4496_MOESM3_ESM.npz")["arr_0"]
+xiang_age = xiang_data[:, 3].astype("float")
+xiang_sfh, xiang_time_bin_edges = np.histogram(
+    xiang_age, bins=75, range=(0, 14)
+)
+xiang_time = np.diff(xiang_time_bin_edges) * 0.5 + xiang_time_bin_edges[:-1]
+
+
+# Rowell 2013
+rowell_data = np.loadtxt(
+    r"SFH-WDLF-article\figure_data\fig_06_rowell_2013_sfh.txt"
+)
+rowell_time = rowell_data[:, 0] / 1e9
+rowell_sfh = rowell_data[:, 1] * 1e9
+
+# Rowell 2023
+rowell_2023_data = np.loadtxt(
+    r"SFH-WDLF-article\figure_data\fig_06_rowell_2023_sfh.txt"
+)
+rowell_2023_time = rowell_2023_data[:, 0] / 1e9
+rowell_2023_sfh = rowell_2023_data[:, 2] * 1e9
 
 """
 # Fantin+ 2019
@@ -363,14 +404,6 @@ mag_bin_norm_this_work = np.concatenate(
     ]
 )
 # This gives the total number
-normalisation_this_work = (
-    np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
-)
-normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset)
-    / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset)
-    * 1e9
-)
 bin_norm_this_work = np.concatenate(
     [
         [partial_age_optimal[1] - partial_age_optimal[0]],
@@ -380,68 +413,85 @@ bin_norm_this_work = np.concatenate(
     ]
 )
 
+normalisation_this_work = (
+    np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
+)
+normalisation_this_work_20pc_subset = (
+    np.sum(obs_wdlf_optimal_20pc_subset)
+    / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset)
+    * 1e9
+)
 
+# These are to normalise to match the GCNS WDLF integrated number density
 normalisation_cignoni = (
-    np.sum(solution_optimal_lsq)
-    * normalisation_this_work
-    / np.sum(cignoni_sfh)
+    np.sum(obs_wdlf_optimal) / (cignoni_sfh @ cignoni_time) / 0.6
 )
-normalisation_mor = (
-    np.sum(solution_optimal_lsq) * normalisation_this_work / np.sum(mor_sfh)
-)
-normalisation_tremblay = (
-    np.sum(solution_optimal_lsq)
-    * normalisation_this_work
-    / np.sum(tremblay_sfh)
+normalisation_mor = 1.0
+normalisation_tremblay = np.sum(obs_wdlf_optimal) / np.sum(
+    tremblay_sfh @ tremblay_time
 )
 normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
-fig1 = plt.figure(100, figsize=(8, 8))
-plt.clf()
-ax1 = plt.gca()
+
+fig6, (ax1, ax2, ax3) = plt.subplots(
+    nrows=3, ncols=1, figsize=(8, 12), height_ratios=(10, 10, 10), sharex=True
+)
+# ax1 for SFH in the unit of N / Gyr / pc^3
+# ax2 for SFH in the unit of M_sun / Gyr / pc^3
+# ax3 for SFH in the unit of number count
+
 # plot data from this work
 ax1.step(
     partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work,
+    solution_optimal_lsq * normalisation_this_work,
     where="mid",
     color="black",
-    label="This work",
+    label="pWDLF (this work)",
 )
-ax1.errorbar(
-    partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work,
-    yerr=[
-        (solution_optimal - solution_lower)
-        * normalisation_this_work
-        / age_bin_norm_this_work,
-        (solution_upper - solution_optimal)
-        * normalisation_this_work
-        / age_bin_norm_this_work,
-    ],
-    fmt="+",
-    color="black",
-)
+
 ax1.step(
     partial_age_optimal,
     solution_optimal_lsq_20pc_subset
     * 100
-    * normalisation_this_work_20pc_subset
-    / bin_norm_this_work,
+    * normalisation_this_work_20pc_subset,
     where="mid",
     label="20pc subset [x100]",
+    color="black",
+    ls="dashed",
+    alpha=0.8,
+)
+
+ax1.step(
+    rowell_time,
+    rowell_sfh,
+    where="mid",
+    label="Rowell 2013",
     color="black",
     alpha=0.6,
 )
 
-# plot Cignoni+ data
 ax1.step(
+    rowell_2023_time,
+    rowell_2023_sfh,
+    where="mid",
+    label="Rowell (this work)",
+    color="black",
+    alpha=0.4,
+)
+
+
+# Unit of M_sun / Gyr / pc^3
+
+
+# plot Cignoni+ data
+ax2.step(
     cignoni_time,
     cignoni_sfh * normalisation_cignoni,
     where="mid",
     color="C0",
     linestyle="-",
 )
-ax1.vlines(
+ax2.vlines(
     cignoni_time,
     (cignoni_sfh - cignoni_sigma_low) * normalisation_cignoni,
     (cignoni_sfh + cignoni_sigma_up) * normalisation_cignoni,
@@ -450,106 +500,130 @@ ax1.vlines(
     label="Cignoni+ 2006",
 )
 
-# plot Reid+ data
-ax1.step(
-    reid_time,
-    reid_sfh
-    / np.max(reid_sfh)
+# plot Bernard data (M / Gyr / pc^3)
+ax2.step(
+    bernard_time,
+    bernard_sfh / np.max(bernard_sfh) * 0.004,
+    where="mid",
+    color="C1",
+    label="Bernard 2018",
+)
+
+
+# plot Isern data (M / Gyr / pc^3)
+ax2.step(
+    isern_time,
+    isern_sfh,
+    where="mid",
+    color="C2",
+)
+ax2.vlines(
+    isern_time,
+    isern_sfh - isern_sigma_low,
+    isern_sfh + isern_sigma_up,
+    color="C2",
+    label="Isern 2019",
+)
+
+# plot Mor+ data
+ax2.step(
+    mor_time,
+    mor_sfh
+    / 25
     * np.max(
         solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
     ),
     where="mid",
-    color="C1",
-    linestyle=":",
-    lw=2,
+    color="C3",
+    label="Mor+ 2019",
+    linestyle="dashed",
+)
+ax2.vlines(
+    mor_time,
+    (mor_sfh - mor_sigma_low)
+    / 25
+    * np.max(
+        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
+    ),
+    (mor_sfh + mor_sigma_up)
+    / 25
+    * np.max(
+        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
+    ),
+    linestyle="dashed",
+    color="C3",
+)
+
+
+# Number count
+
+# plot Reid+ data
+ax3.step(
+    reid_time,
+    reid_sfh / np.nanmax(reid_sfh),
+    where="mid",
+    color="C4",
     label="Reid+ 2007",
 )
 
 
 # plot Tremblay+ data
-ax1.step(
+ax3.step(
     tremblay_time,
-    tremblay_sfh
-    / np.max(tremblay_sfh)
-    * np.max(
-        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
-    ),
-    where="mid",
-    color="C2",
-    label="Tremblay+ 2014",
-    linestyle=":",
-)
-# ax1.vlines(
-#    tremblay_time,
-#    (tremblay_sfh - tremblay_sigma_low) / np.max(tremblay_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
-#    (tremblay_sfh + tremblay_sigma_up) / np.max(tremblay_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
-#    linestyle=":",
-#    color="C2",
-#    label="Tremblay+ 2014",
-# )
-
-"""
-# plot Isern data
-ax1.step(
-    isern_time,
-    isern_sfh,
-    where="mid",
-    color="C3",
-)
-ax1.vlines(
-    isern_time,
-    isern_sfh - isern_sigma_low,
-    isern_sfh + isern_sigma_up,
-    color="C3",
-    label="Isern 2019",
-)
-"""
-
-# plot Mor+ data
-ax1.step(
-    mor_time,
-    mor_sfh
-    / np.max(mor_sfh)
-    * np.max(
-        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
-    ),
-    where="mid",
-    color="C4",
-    label="Mor+ 2019",
-    linestyle="dashed",
-)
-# ax1.vlines(
-#    mor_time,
-#    (mor_sfh - mor_sigma_low) / np.max(mor_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
-#    (mor_sfh + mor_sigma_up) / np.max(mor_sfh) * np.max(solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work),
-#    linestyle="dashed",
-#    color="C4",
-#    label="Mor+ 2019",
-# )
-
-"""
-# plot Torres+ data
-ax1.step(
-    torres_time,
-    torres_sfh,
+    tremblay_sfh / np.nanmax(tremblay_sfh),
     where="mid",
     color="C5",
+    label="Tremblay+ 2014",
+)
+
+
+# plot Torres+ data (N)
+ax3.step(
+    torres_time,
+    torres_sfh / np.nanmax(torres_sfh),
+    where="mid",
+    color="C6",
     label="Torres+ 2021",
 )
-"""
+
+
+# plot Xiang+ data (N)
+ax3.step(
+    xiang_time,
+    xiang_sfh / np.nanmax(xiang_sfh),
+    where="mid",
+    color="C7",
+    label="Xiang+ 2022",
+)
+
 
 ax1.grid()
+ax2.grid()
+ax3.grid()
+
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
-ax1.set_ylim(0, 0.0085)
-ax1.set_xlabel("Lookback time [Gyr]")
-ax1.set_ylabel(r"Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
-ax1.legend(loc='upper right')
 
+ax1.set_ylim(0, 0.003)
+ax2.set_ylim(0, 0.00425)
+ax3.set_ylim(0, 1.5)
+
+ax3.set_xlabel("Lookback time [Gyr]")
+
+ax1.set_ylabel(r"Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
+ax2.set_ylabel(r"Star Formation Rate [M$_{\odot}$ Gyr$^{-1}$ pc$^{-3}$]")
+ax3.set_ylabel(r"Star Formation Rate [N / arbitrary unit]")
+
+
+ax1.legend(loc="upper right")
+ax2.legend(loc="upper right")
+ax3.legend(loc="upper right")
 
 plt.tight_layout()
+plt.subplots_adjust(hspace=0)
 
-fig1.savefig(
+
+fig6.savefig(
     os.path.join(
         figure_folder,
         "fig_06_compare_sfh.png",
