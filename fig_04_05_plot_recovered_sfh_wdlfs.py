@@ -412,3 +412,36 @@ fig1.savefig(
         "fig_05_gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.png",
     )
 )
+
+# Prepare to output CSV of the reconstructed WDLFs
+wdlf_output = (
+    recomputed_wdlf_optimal_lsq_20pc_subset
+    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
+    * np.nansum(obs_wdlf_optimal_20pc_subset)
+)
+
+wdlf_err_output = obs_wdlf_optimal_20pc_subset
+wdlf_20_output = (
+    recomputed_wdlf_optimal_lsq_20pc_subset
+    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
+    * np.nansum(obs_wdlf_optimal_20pc_subset)
+)
+
+wdlf_20_err_output = obs_wdlf_optimal_20pc_subset
+
+
+csv_output = np.column_stack(
+    [
+        mag_obs_optimal,
+        wdlf_output,
+        wdlf_err_output,
+        wdlf_20_output,
+        wdlf_20_err_output,
+    ]
+)
+
+np.savetxt(
+    "SFH-WDLF-article/figure_data/fig_05_gcns_reconstructed_wdlf.csv",
+    csv_output,
+    fmt='%.6e'
+)
