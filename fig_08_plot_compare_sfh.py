@@ -2,7 +2,7 @@ import os
 
 from matplotlib import pyplot as plt
 import numpy as np
-from spectres import spectres
+from spectresc import spectres
 from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
 from WDPhotTools.theoretical_lf import WDLF
 from pynverse import inversefunc
@@ -195,10 +195,9 @@ for pwdlf, age in zip(partial_wdlf_optimal, partial_age_optimal):
 
 """
 
-
 # Cignoni+ 2006 (only relative SFH)
 cignoni_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_cignoni_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_cignoni_sfh.csv", delimiter=","
 )
 cignoni_time = cignoni_data[:, 0]
 cignoni_sfh = cignoni_data[:, 1]
@@ -221,7 +220,7 @@ cignoni_sigma_low = np.append(cignoni_sigma_low, 0.0)
 
 # Isern 2019 (In mass per Gyr)
 isern_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_isern_2019_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_isern_2019_sfh.csv", delimiter=","
 )
 isern_time = isern_data[:, 0]
 isern_sfh = 10.0 ** (isern_data[:, 1])
@@ -240,7 +239,7 @@ isern_sigma_low = np.append(isern_sigma_low, 0.0)
 
 # Mor+ 2019 (only relative SFH, in pc^-2...)
 mor_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_mor_2019_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_mor_2019_sfh.csv", delimiter=","
 )
 mor_time = mor_data[:, 0]
 mor_sfh = mor_data[:, 1]
@@ -259,7 +258,7 @@ mor_sigma_low = np.append(mor_sigma_low, 0.0)
 
 # Tremblay+ 2014 (only relative SFH)
 tremblay_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_tremblay_2014_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_tremblay_2014_sfh.csv", delimiter=","
 )
 tremblay_time = tremblay_data[:, 0]
 tremblay_sfh = tremblay_data[:, 1]
@@ -282,7 +281,7 @@ tremblay_sigma_low = np.append(tremblay_sigma_low, 0.0)
 
 # Reid+ 2007 (only relative SFH)
 reid_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_reid_2007_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_reid_2007_sfh.csv", delimiter=","
 )
 reid_time = reid_data[:, 0]
 reid_sfh = reid_data[:, 1]
@@ -295,7 +294,7 @@ reid_sfh = np.append(reid_sfh, 0.0)
 
 # Bernard+ 2018
 bernard_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_bernard_2018_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_bernard_2018_sfh.csv", delimiter=","
 )
 bernard_time = bernard_data[:, 0]
 bernard_sfh = bernard_data[:, 1]
@@ -313,7 +312,7 @@ bernard_sfh = np.append(bernard_sfh, 0.0)
 
 # Torres+ 2021
 torres_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_torres_2021_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_torres_2021_sfh.csv", delimiter=","
 )
 torres_time = torres_data[:, 0]
 torres_sfh = torres_data[:, 1]
@@ -335,14 +334,14 @@ xiang_time = np.diff(xiang_time_bin_edges) * 0.5 + xiang_time_bin_edges[:-1]
 
 # Rowell 2013
 rowell_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_rowell_2013_sfh.txt"
+    r"SFH-WDLF-article/figure_data/fig_08_rowell_2013_sfh.txt"
 )
 rowell_time = rowell_data[:, 0] / 1e9
 rowell_sfh = rowell_data[:, 1] * 1e9
 
 # Rowell 2023
 rowell_2023_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_rowell_2023_sfh.txt"
+    r"SFH-WDLF-article/figure_data/fig_08_rowell_2023_sfh.txt"
 )
 rowell_2023_time = rowell_2023_data[:, 0] / 1e9
 rowell_2023_sfh = rowell_2023_data[:, 2] * 1e9
@@ -350,7 +349,7 @@ rowell_2023_sfh = rowell_2023_data[:, 2] * 1e9
 """
 # Fantin+ 2019
 fantin_data = np.loadtxt(
-    r"SFH-WDLF-article\figure_data\fig_06_fantin_2019_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_08_fantin_2019_sfh.csv", delimiter=","
 )
 fantin_thin = fantin_data[0]
 fantin_thick = fantin_data[1]
@@ -432,6 +431,14 @@ normalisation_tremblay = np.sum(obs_wdlf_optimal) / np.sum(
 )
 normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
+bin_norm_this_work = np.concatenate(
+    [
+        [partial_age_optimal[1] - partial_age_optimal[0]],
+        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
+        / 2.0,
+        [partial_age_optimal[-1] - partial_age_optimal[-2]],
+    ]
+)
 
 fig6, (ax1, ax2, ax3) = plt.subplots(
     nrows=3, ncols=1, figsize=(8, 12), height_ratios=(10, 10, 10), sharex=True
@@ -443,7 +450,7 @@ fig6, (ax1, ax2, ax3) = plt.subplots(
 # plot data from this work
 ax1.step(
     partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work,
+    solution_optimal_lsq * normalisation_this_work / bin_norm_this_work,
     where="mid",
     color="black",
     label="pWDLF (this work)",
@@ -453,7 +460,7 @@ ax1.step(
     partial_age_optimal,
     solution_optimal_lsq_20pc_subset
     * 100
-    * normalisation_this_work_20pc_subset,
+    * normalisation_this_work_20pc_subset / bin_norm_this_work,
     where="mid",
     label="20pc subset [x100]",
     color="black",
@@ -604,7 +611,7 @@ ax3.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 
-ax1.set_ylim(0, 0.003)
+ax1.set_ylim(0, 0.0065)
 ax2.set_ylim(0, 0.00425)
 ax3.set_ylim(0, 1.5)
 
@@ -626,6 +633,6 @@ plt.subplots_adjust(hspace=0)
 fig6.savefig(
     os.path.join(
         figure_folder,
-        "fig_06_compare_sfh.png",
+        "fig_08_compare_sfh.png",
     )
 )
