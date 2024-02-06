@@ -3,7 +3,7 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 from pynverse import inversefunc
-from spectres import spectres
+from spectresc import spectres
 from scipy import interpolate
 
 
@@ -154,7 +154,7 @@ partial_age_optimal.append(15.0)
 
 plt.figure(1, figsize=(8, 6))
 plt.clf()
-for i, _wdlf in enumerate(partial_wdlf_optimal):
+for i, _wdlf in enumerate(partial_wdlf_optimal[:-1]):
     plt.plot(
         mag_obs_optimal,
         _wdlf,
@@ -443,5 +443,5 @@ csv_output = np.column_stack(
 np.savetxt(
     "SFH-WDLF-article/figure_data/fig_05_gcns_reconstructed_wdlf.csv",
     csv_output,
-    fmt='%.6e'
+    fmt="%.6e",
 )

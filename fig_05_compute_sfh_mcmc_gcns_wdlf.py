@@ -4,7 +4,7 @@ import emcee
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.optimize import least_squares
-from spectres import spectres
+from spectresc import spectres
 from WDPhotTools import theoretical_lf
 
 

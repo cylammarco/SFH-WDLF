@@ -119,8 +119,8 @@ n_wd_4 = wdlf_number_density_4[wdlf_number_density_4 > 0.0]
 n_wd_5 = wdlf_number_density_5[wdlf_number_density_5 > 0.0]
 
 
-fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(10, 3, 15)
+fig1, (ax1, ax_dummy1, ax2, ax_dummy2, ax3) = plt.subplots(
+    nrows=5, ncols=1, figsize=(8, 12), height_ratios=(10, 3, 10, 2, 10)
 )
 #
 ax1.plot(age, sfh_1 / np.nanmax(sfh_1), ls=":", color="C0")
@@ -192,7 +192,7 @@ ax1.set_xlim(0, 14)
 ax1.set_ylim(0, 1.2)
 ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel("Relative SFR")
-ax1.legend()
+ax1.legend(loc="upper right")
 #
 ax_dummy1.axis("off")
 #
@@ -295,7 +295,7 @@ ax2.set_ylabel("log(arbitrary number density)")
 ax2.set_xlim(6.00, 18.00)
 ax2.set_ylim(1e-8, 2e-1)
 ax2.set_yscale("log")
-ax2.legend()
+ax2.legend(loc="lower right")
 ax2.grid()
 #
 # Get the Mbol to Age relation
@@ -309,6 +309,61 @@ ax2b = ax2.twiny()
 ax2b.set_xlim(ax2.get_xlim())
 ax2b.set_xticks(ax2.get_xticks())
 ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
+
+#
+ax_dummy2.axis("off")
+#
+
+# residual plot
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_1 / np.nansum(wdlf_number_density_1)
+        - recomputed_wdlf_lsq_1 / np.nansum(recomputed_wdlf_lsq_1)
+    )
+    * 1e3,
+    color="C0",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_2 / np.nansum(wdlf_number_density_2)
+        - recomputed_wdlf_lsq_2 / np.nansum(recomputed_wdlf_lsq_2)
+    )
+    * 1e3,
+    color="C1",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_3 / np.nansum(wdlf_number_density_3)
+        - recomputed_wdlf_lsq_3 / np.nansum(recomputed_wdlf_lsq_3)
+    )
+    * 1e3,
+    color="C2",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_4 / np.nansum(wdlf_number_density_4)
+        - recomputed_wdlf_lsq_4 / np.nansum(recomputed_wdlf_lsq_4)
+    )
+    * 1e3,
+    color="C3",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_5 / np.nansum(wdlf_number_density_5)
+        - recomputed_wdlf_lsq_5 / np.nansum(recomputed_wdlf_lsq_5)
+    )
+    * 1e3,
+    color="C4",
+)
+ax3.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
+ax3.set_ylabel(r"$\Delta$(number density) x 1E-3")
+ax3.set_xlim(6.00, 18.00)
+ax3.grid()
 
 plt.subplots_adjust(top=0.99, bottom=0.06, left=0.1, right=0.985, hspace=0.01)
 

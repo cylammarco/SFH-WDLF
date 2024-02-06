@@ -74,12 +74,10 @@ _arg = np.argsort(_mbol)
 
 # get the total error
 mbol_diff = (
-    _mbol
-    - _mbol_upper_1_sigma
+    (_mbol - _mbol_upper_1_sigma)
     + (_mbol - _mbol_upper_2_sigma) / 2.0
     + (_mbol - _mbol_upper_3_sigma) / 3.0
-    + _mbol_lower_1_sigma
-    - _mbol
+    + (_mbol_lower_1_sigma - _mbol)
     + (_mbol_lower_2_sigma - _mbol) / 2.0
     + (_mbol_lower_3_sigma - _mbol) / 3.0
 ) / 6.0
@@ -92,7 +90,6 @@ mbol_total_err = mbol_total_err[_arg]
 _mbol = _mbol[_arg]
 
 # get the precomputed envelope
-# mag_upper_bound, err_upper_bound = np.load("mbol_err_upper_bound.npy").T
 mag_mean, err_mean = np.load(
     "SFH-WDLF-article/figure_data/mbol_err_mean.npy"
 ).T
@@ -183,7 +180,7 @@ ax3.plot(
 )
 ax3.grid()
 ax3.legend()
-ax3.set_ylabel("magnitude at peak density")
+ax3.set_ylabel("magnitude at peak density [mag]")
 ax3.set_xlabel("log(cooling age) [Gyr]")
 ax3.set_xscale("log")
 
@@ -198,24 +195,46 @@ ax2.set_xscale('log')
 
 """
 # Load the "resolution" of the Mbol solution
-# mbol_err_upper_bound = interpolate.UnivariateSpline(
-#    *np.load("mbol_err_upper_bound.npy").T, s=0
-# )
-mbol_err_upper_bound = interpolate.UnivariateSpline(
-    *np.load("SFH-WDLF-article/figure_data/mbol_err_mean.npy").T, s=0
-)
-
+mbol_err_mean_itp = interpolate.UnivariateSpline(mag_mean, err_mean, s=0)
 
 # Nyquist sampling for resolving 2 gaussian peaks -> 2.355 sigma.
-mag_bin = []
-mag_bin_idx = []
+mag_bin_start = []
+mag_bin_end = []
 # to group the constituent pwdlfs into the optimal set of pwdlfs
 mag_bin_pwdlf = np.zeros_like(age[1:]).astype("int")
+j = 0
+stop = False
+
+for i, a in enumerate(age):
+    start = float(mag_resolution_itp(a))
+    end = start
+    j = i
+    carry_on = True
+    if j >= len(age) - 1:
+        carry_on = False
+    # Truncate at 16.5 (pad in latter script)
+    while carry_on:
+        tmp = mag_resolution_itp(age[j + 1]) - mag_resolution_itp(age[j])
+        print(j, end + tmp - start)
+        # Nyquist sampling: sample 2 times for every FWHM (i.e. 2.355 sigma)
+        if end + tmp - start < mbol_err_mean_itp(start) * 1.1775:
+            end = end + tmp
+            j += 1
+            if j >= len(age) - 1:
+                carry_on = False
+                stop = True
+        else:
+            carry_on = False
+    mag_bin_start.append(start)
+    mag_bin_end.append(end)
+    if stop:
+        break
+
+
 j = 0
 bin_number = 0
 stop = False
 # the mag_bin is the bin edges
-mag_bin.append(mag_at_peak_density[0])
 for i, a in enumerate(age):
     if i < j:
         continue
@@ -231,7 +250,7 @@ for i, a in enumerate(age):
         print(j, end + tmp - start)
         mag_bin_pwdlf[j] = bin_number
         # Nyquist sampling: sample 2 times for every FWHM (i.e. 2.355 sigma)
-        if end + tmp - start < mbol_err_upper_bound(start) * 1.1775:
+        if end + tmp - start < mbol_err_mean_itp(start) * 1.1775:
             end = end + tmp
             j += 1
             if j >= len(age) - 1:
@@ -240,53 +259,44 @@ for i, a in enumerate(age):
         else:
             carry_on = False
             bin_number += 1
-    mag_bin.append(end)
-    mag_bin_idx.append(i)
     if stop:
         break
 
-mag_bin_full = mag_bin.copy()
+
+print(set(mag_bin_pwdlf))
 
 # these are the bin edges
-mag_bin = np.array(mag_bin)
-mag_bin = mag_bin[mag_bin <=16.5]
+mag_bin_start = np.array(mag_bin_start)
+mag_bin_end = np.array(mag_bin_end)
 
-# if magnitudes don't reach 18, pad to 18 in 0.2 mag increment
-if max(mag_bin) < 20.0:
-    _n = int(np.round((20.0 - mag_bin[-1]) / (mag_bin[-1] - mag_bin[-2])))
-    mag_bin = np.append(mag_bin[:-1], np.linspace(mag_bin[-1], 20.0, _n))
 
-mag_bin_age = age_resolution_itp(mag_bin)
-resolution_optimal = np.diff(mag_bin)
+mag_bin_mid = (mag_bin_start + mag_bin_end) / 2.0
+mag_bin_age = age_resolution_itp(mag_bin_mid)
+resolution_optimal = mag_bin_end - mag_bin_start
 
 # get the bin centre
-mag_bin = (mag_bin[1:] + mag_bin[:-1]) / 2.0
 pwdlf_mapping_mag_bin = np.insert(mag_bin_pwdlf, 0, 0)
 
-ax5.plot(
-    mag_bin,
-    resolution_optimal,
+mag_resolution_itp = interpolate.UnivariateSpline(
+    mag_bin_mid, resolution_optimal, s=0.1, k=5
 )
-ax5.set_ylabel("magnitude resolution")
+ax5.scatter(mag_bin_mid, resolution_optimal, s=2, label="Measured")
+ax5.plot(
+    mag_bin_mid,
+    mag_resolution_itp(mag_bin_mid),
+    color="black",
+    ls="dashed",
+    label="Fitted",
+)
+
+ax5.set_ylabel("magnitude resolution [mag]")
 ax5.set_xlabel(r"M$_{\mathrm{bol}}$ [mag]")
 ax5.set_xticks(np.arange(6, 19, 1))
 ax5.set_xlim(6, 18.2)
-ax5.set_ylim(0, 3.25)
+ax5.set_ylim(0, 2.0)
 ax5.grid()
+ax5.legend(loc="lower left")
 
-"""
-# Get the Mbol to Age relation
-atm = AtmosphereModelReader()
-Mbol_to_age = atm.interp_am(dependent="age")
-age_ticks = Mbol_to_age(8.0, ax5.get_xticks())
-age_ticklabels = [f"{i/1e9:.3f}" for i in age_ticks]
-
-# make the top axis
-ax5b = ax5.twiny()
-ax5b.set_xlim(ax5.get_xlim())
-ax5b.set_xticks(ax5.get_xticks())
-ax5b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
-"""
 plt.subplots_adjust(
     top=0.99, bottom=0.045, left=0.1, right=0.985, hspace=0.015
 )
@@ -304,5 +314,5 @@ np.save(
 # save the Mbol resolution
 np.save(
     "SFH-WDLF-article/figure_data/mbol_resolution.npy",
-    np.column_stack((mag_bin, resolution_optimal)),
+    np.column_stack((mag_bin_mid, resolution_optimal)),
 )

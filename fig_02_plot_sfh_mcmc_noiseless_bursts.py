@@ -143,8 +143,8 @@ n_wd_combined = wdlf_number_density_combined[
 ]
 
 # Figure here
-fig1, (ax1, ax_dummy1, ax2) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 10), height_ratios=(15, 2, 10)
+fig1, (ax1, ax_dummy1, ax2, ax_dummy2, ax3) = plt.subplots(
+    nrows=5, ncols=1, figsize=(8, 12), height_ratios=(10, 3, 10, 2, 10)
 )
 ax_dummy1.axis("off")
 #
@@ -225,7 +225,7 @@ ax1.set_xlim(0, 14)
 ax1.set_ylim(0, 6.25)
 ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel("Relative SFR")
-ax1.legend()
+ax1.legend(loc="upper right")
 #
 ax2.plot(mag_bin, n_wd_1, ls=":", color="C0")
 ax2.plot(mag_bin, n_wd_2 * 0.2, ls=":", color="C1")
@@ -341,7 +341,7 @@ ax2.set_ylabel("log(arbitrary number density)")
 ax2.set_xlim(6, 18)
 ax2.set_ylim(1e-8, 2e-1)
 ax2.set_yscale("log")
-ax2.legend()
+ax2.legend(loc="lower right")
 ax2.grid()
 plt.subplots_adjust(
     top=0.975, bottom=0.075, left=0.125, right=0.975, hspace=0.075
@@ -353,13 +353,66 @@ Mbol_to_age = atm.interp_am(dependent="age")
 age_ticks = Mbol_to_age(8.0, ax2.get_xticks())
 age_ticklabels = [f"{i/1e9:.3f}" for i in age_ticks]
 
-"""
 # make the top axis
 ax2b = ax2.twiny()
 ax2b.set_xlim(ax2.get_xlim())
 ax2b.set_xticks(ax2.get_xticks())
 ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
-"""
+
+#
+ax_dummy2.axis("off")
+#
+
+# residual plot
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_1 / np.nansum(wdlf_number_density_1)
+        - recomputed_wdlf_lsq_1 / np.nansum(recomputed_wdlf_lsq_1)
+    )
+    * 1e3,
+    color="C0",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_2 / np.nansum(wdlf_number_density_2)
+        - recomputed_wdlf_lsq_2 / np.nansum(recomputed_wdlf_lsq_2)
+    )
+    * 1e3,
+    color="C1",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_3 / np.nansum(wdlf_number_density_3)
+        - recomputed_wdlf_lsq_3 / np.nansum(recomputed_wdlf_lsq_3)
+    )
+    * 1e3,
+    color="C2",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_4 / np.nansum(wdlf_number_density_4)
+        - recomputed_wdlf_lsq_4 / np.nansum(recomputed_wdlf_lsq_4)
+    )
+    * 1e3,
+    color="C3",
+)
+ax3.plot(
+    mag_bin,
+    (
+        wdlf_number_density_5 / np.nansum(wdlf_number_density_5)
+        - recomputed_wdlf_lsq_5 / np.nansum(recomputed_wdlf_lsq_5)
+    )
+    * 1e3,
+    color="C4",
+)
+ax3.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
+ax3.set_ylabel(r"$\Delta$(number density) x 1E-3")
+ax3.set_xlim(6.00, 18.00)
+ax3.grid()
 
 plt.subplots_adjust(top=0.99, bottom=0.06, left=0.1, right=0.98, hspace=0.01)
 
