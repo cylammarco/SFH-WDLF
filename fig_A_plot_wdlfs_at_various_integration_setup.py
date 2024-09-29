@@ -77,4 +77,4 @@ for age in age_list:
 
         # plt.suptitle(f"{age // 1e9} Gyr old population with {duration // 1e6} Myr" " starburst")
         plt.subplots_adjust(top=0.96, bottom=0.05, left=0.075, right=0.995, hspace=0, wspace=0)
-        plt.savefig(f"fig_A_age_{age}.png")
+        plt.savefig(f"SFH-WDLF-article/figures/fig_A_age_{age}.png")
