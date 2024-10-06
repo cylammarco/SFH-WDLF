@@ -14,7 +14,7 @@ n_points_list = ["100", "200", "500", "1000", "2000", "5000", "10000"]
 
 for age in age_list:
 
-    fig, (ax1, ax2) = plt.subplots(2, 3, figsize=(15, 10), sharex=True, sharey="row")
+    fig, (ax1, ax2) = plt.subplots(2, 3, figsize=(15, 8.5), sharex=True, sharey="row")
     for i, duration in enumerate(duration_list):
         # vary tolerance
         t = []
@@ -76,5 +76,5 @@ for age in age_list:
             ax2[i].set_ylabel("Arbitrary number density")
 
         # plt.suptitle(f"{age // 1e9} Gyr old population with {duration // 1e6} Myr" " starburst")
-        plt.subplots_adjust(top=0.96, bottom=0.05, left=0.075, right=0.995, hspace=0, wspace=0)
+        plt.subplots_adjust(top=0.96, bottom=0.055, left=0.05, right=0.995, hspace=0, wspace=0)
         plt.savefig(f"SFH-WDLF-article/figures/fig_A_age_{age}.png")
