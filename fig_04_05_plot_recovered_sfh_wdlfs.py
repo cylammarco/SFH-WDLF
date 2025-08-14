@@ -32,7 +32,7 @@ for i in age_list_3dp:
         np.loadtxt(
             os.path.join(
                 "output",
-                f"montreal_co_da_20_K01_PARSECz0014_C08_{i:.3f}_Mbol.csv",
+                f"montreal_co_da_20_C03_PARSECz0017_C08_{i:.3f}_Mbol.csv",
             ),
             delimiter=",",
         )
@@ -43,7 +43,7 @@ for i in age_list_2dp:
         np.loadtxt(
             os.path.join(
                 "output",
-                f"montreal_co_da_20_K01_PARSECz0014_C08_{i:.2f}_Mbol.csv",
+                f"montreal_co_da_20_C03_PARSECz0017_C08_{i:.2f}_Mbol.csv",
             ),
             delimiter=",",
         )
@@ -64,6 +64,7 @@ age_resolution_itp = inversefunc(mag_resolution_itp)
 
 (
     partial_age_optimal,
+    partial_age_duration,
     solution_optimal,
     solution_lower,
     solution_upper,
@@ -72,12 +73,11 @@ age_resolution_itp = inversefunc(mag_resolution_itp)
 ).T
 (
     partial_age_optimal,
+    partial_age_duration,
     solution_optimal_20pc_subset,
     solution_lower_20pc_subset,
     solution_upper_20pc_subset,
-) = np.load(
-    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy"
-).T
+) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy").T
 
 # The lsq solution
 lsq_res = np.load(
@@ -261,6 +261,7 @@ ax1.step(
     solution_optimal_lsq * normalisation_this_work / bin_norm_this_work,
     where="mid",
     label="lsq",
+    ls="dashed",
 )
 ax1.fill_between(
     partial_age_optimal,
@@ -282,12 +283,10 @@ ax1.step(
 )
 ax1.step(
     partial_age_optimal,
-    solution_optimal_lsq_20pc_subset
-    * 100
-    * normalisation_this_work_20pc_subset
-    / bin_norm_this_work,
+    solution_optimal_lsq_20pc_subset * 100 * normalisation_this_work_20pc_subset / bin_norm_this_work,
     where="mid",
     label="lsq (20pc subset) [x100]",
+    ls="dashed",
 )
 ax1.fill_between(
     partial_age_optimal,
@@ -321,11 +320,10 @@ ax2.plot(
 )
 ax2.plot(
     mag_obs_optimal,
-    recomputed_wdlf_optimal_lsq
-    / np.nansum(recomputed_wdlf_optimal_lsq)
-    * np.nansum(obs_wdlf_optimal),
+    recomputed_wdlf_optimal_lsq / np.nansum(recomputed_wdlf_optimal_lsq) * np.nansum(obs_wdlf_optimal),
     label="Reconstructed WDLF (lsq)",
     color="C01",
+    ls="dashed",
 )
 ax2.errorbar(
     mag_obs_optimal,
@@ -364,6 +362,7 @@ ax2.plot(
     * np.nansum(obs_wdlf_optimal_20pc_subset),
     label="Reconstructed WDLF (lsq, 20pc subset)",
     color="C03",
+    ls="dashed",
 )
 ax2.errorbar(
     mag_obs_optimal,

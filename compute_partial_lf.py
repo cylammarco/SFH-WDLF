@@ -1,6 +1,5 @@
 from mpi4py import MPI
 import numpy as np
-import os
 import sys
 from WDPhotTools import theoretical_lf
 
@@ -54,14 +53,14 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         limit=1000000,
         n_points=10000,
         folder="output",
-        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.3f}_Mbol.csv",
+        filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age / 1e9:.3f}_Mbol.csv",
         save_csv=True,
     )
     wdlf.plot_wdlf(
         display=False,
         savefig=True,
         folder="output",
-        filename=f"montreal_co_da_20_K01_PARSECz0014_C08_{age / 1e9:.3f}_Mbol.png",
+        filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age / 1e9:.3f}_Mbol",
     )
     """
     # WDLF in GDR3 G
@@ -74,7 +73,7 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         limit=1000000,
         n_points=1000,
         folder="output",
-        filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3.csv".format(
+        filename="montreal_co_da_20_C03_PARSECz0017_C08_{0:.2f}_G3.csv".format(
             age / 1e9
         ),
         save_csv=True,
@@ -83,7 +82,7 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         display=False,
         savefig=True,
         folder="output",
-        filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3".format(
+        filename="montreal_co_da_20_C03_PARSECz0017_C08_{0:.2f}_G3".format(
             age / 1e9
         ),
     )
@@ -97,7 +96,7 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         limit=1000000,
         n_points=1000,
         folder="output",
-        filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_BP.csv".format(
+        filename="montreal_co_da_20_C03_PARSECz0017_C08_{0:.2f}_G3_BP.csv".format(
             age / 1e9
         ),
         save_csv=True,
@@ -106,7 +105,7 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         display=False,
         savefig=True,
         folder="output",
-        filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_BP".format(
+        filename="montreal_co_da_20_C03_PARSECz0017_C08_{0:.2f}_G3_BP".format(
             age / 1e9
         ),
     )
@@ -120,7 +119,7 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         limit=1000000,
         n_points=1000,
         folder="output",
-        filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_RP.csv".format(
+        filename="montreal_co_da_20_C03_PARSECz0017_C08_{0:.2f}_G3_RP.csv".format(
             age / 1e9
         ),
         save_csv=True,
@@ -129,7 +128,7 @@ for age, bin_size in zip(age_list_per_rank, age_list_bin_size_per_rank):
         display=False,
         savefig=True,
         folder="output",
-        filename="montreal_co_da_20_K01_PARSECz0014_C08_{0:.2f}_G3_RP".format(
+        filename="montreal_co_da_20_C03_PARSECz0017_C08_{0:.2f}_G3_RP".format(
             age / 1e9
         ),
     )

@@ -12,11 +12,6 @@ G3 = data_edr3["phot_g_mean_mag"]
 G3_BP = data_edr3["phot_bp_mean_mag"]
 G3_RP = data_edr3["phot_rp_mean_mag"]
 
-# the extra uncertainties come from
-# https://ui.adsabs.harvard.edu/abs/2006AJ....132.1221H/abstract
-# using u+g+r as proxy-G_BP
-# using u+g+r+i+z as proxy-G
-# using r+i+z as proxy-G_RP
 G3_ERR = 1.0 / data_edr3["phot_g_mean_flux_over_error"]
 G3_BP_ERR = 1.0 / data_edr3["phot_bp_mean_flux_over_error"]
 G3_RP_ERR = 1.0 / data_edr3["phot_rp_mean_flux_over_error"]
@@ -42,9 +37,11 @@ Mbol_lower_2_sigma = {}
 Mbol_lower_3_sigma = {}
 
 # https://ui.adsabs.harvard.edu/abs/2024MNRAS.527.8687O
-# log(g_phot) = 8.0607 ± 0.2783
-logg_mean = 8.0607
-logg_sigma = 0.2783
+# log(g_phot) = 8.0607378 ± 0.2785876
+# https://ui.adsabs.harvard.edu/abs/2021MNRAS.508.3877G/abstract
+# Figure 14, the dispersion is about 0.03 dex
+logg_mean = 8.0607378
+logg_sigma = np.sqrt(0.2785876**2.0 + 0.03**2.0)
 logg = {
     "low_3": logg_mean - 3 * logg_sigma,
     "low_2": logg_mean - 2 * logg_sigma,
@@ -99,6 +96,7 @@ except Exception as e:
     print("Computing the post-hoc errors.")
     for k, g in logg.items():
         ftr = WDfitter()
+        print(f"Fitting {k}, with logg = {g}")
         for i, source_id in enumerate(data_edr3["source_id"]):
             Mbol_initial_guess = np.nanmean(gcns_Mbol[gcns_wd["sourceID"] == source_id])
             Mbol_initial[source_id] = Mbol_initial_guess
@@ -232,7 +230,7 @@ mag_bin = np.concatenate(
         [3.0],
         [4.0],
         np.arange(5.00, 6.75, 0.5),
-        np.arange(6.75, 17.41, 0.2),
+        np.arange(6.75, 17.01, 0.2),
         [17.6],
     ]
 )
@@ -242,11 +240,10 @@ sdv_bin = np.zeros_like(mag_bin)
 mean_bin = np.zeros_like(mag_bin)
 for i in list(set(idx)):
     sdv_bin[i] = 1.4826 * np.median(np.abs(np.median(mbol_total_err[idx == i]) - mbol_total_err[idx == i]))
-    mean_bin[i] = np.average(mbol_total_err[idx == i], weights=vmax_mean[idx == i])
+    mean_bin[i] = np.average(mbol_total_err[idx == i], weights=1.0/vmax_mean[idx == i])
 
 
-tck = splrep(mag_bin_center, mean_bin[1:], k=3, s=1.0 / len(mean_bin))
-# tck = splrep(mag_bin_center, median_bin[1:] + sdv_bin[1:] * 3, k=2, s=0.015)
+tck = splrep(mag_bin_center, mean_bin[1:], k=2, s=0.002)
 
 output_mean = np.column_stack(
     (
