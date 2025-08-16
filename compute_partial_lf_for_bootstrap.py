@@ -6,29 +6,13 @@ from scipy.interpolate import interp1d
 from WDPhotTools import theoretical_lf
 from WDPhotTools.util import load_ms_lifetime_datatable
 
-
-rng = np.random.RandomState(846513)
-
-
-# These are the same as in Roberts+25
-# stdev on the exponent
-sigma_imf = 0.1  # El-Badry+18; Cunningham+24
-# percentage of the ms lifetime
-sigma_ms = 0.048  # Hurley+00
-# percentage of the intial-final mass relation
-sigma_m_ifmr = 0.004  # Catalan+08 ~3%
-sigma_c_ifmr = (
-    0.011  # Catalan+08 ~3%; Hollands+24 has 1-10% depending on the mass, less than 4% in the range of 1-5 M_sun
-)
-# perentage of the cooling time
-sigma_cooling = 0.06  # CUkanovaite+23; Cunningham+24; Pathak+24
-
-imf_samples = rng.normal(loc=0.0, scale=sigma_imf, size=1000)
-ms_samples = rng.normal(loc=0.0, scale=sigma_ms, size=1000)
-ifmr_m_samples = rng.normal(loc=0.0, scale=sigma_m_ifmr, size=1000)
-ifmr_c_samples = rng.normal(loc=0.0, scale=sigma_c_ifmr, size=1000)
-cooling_samples = rng.normal(loc=0.0, scale=sigma_cooling, size=1000)
-
+(
+    imf_samples,
+    ms_samples,
+    ifmr_m_samples,
+    ifmr_c_samples,
+    cooling_samples,
+) = np.load("bootstrap_table.npy").T
 
 wdlf = theoretical_lf.WDLF()
 
@@ -91,6 +75,7 @@ def ifmr_function(delta_m, delta_c):
     return ifmr_func
 
 
+Mag = np.arange(5.0, 18.0, 0.1)
 (
     partial_age_optimal,
     partial_age_duration,
@@ -106,31 +91,30 @@ for i, (delta_imf, delta_ms, delta_ifmr_m, delta_ifmr_c, delta_cooling) in enume
         f"Currently computing WDLF with imf delta={delta_imf:.4f}, ms delta={delta_ms:.4f}, "
         f"ifmr_m delta={delta_ifmr_m:.4f}, ifmr_c delta={delta_ifmr_c:.4f}, cooling delta={delta_cooling:.4f}."
     )
-
     wdlf.set_imf_model(model="manual", imf_function=imf_function(delta_imf))
     wdlf.set_ms_model(model="manual", ms_function=ms_function(delta_ms))
     wdlf.set_ifmr_model(
         model="manual",
         ifmr_function=ifmr_function(delta_ifmr_m, delta_ifmr_c),
     )
+    # Construct the interpolator
+    wdlf.compute_cooling_age_interpolator(interpolator="RBF", scaling_factor=(1.0 + delta_cooling))
 
     for age, duration in zip(partial_age_optimal, partial_age_duration):
-        print(f"Currently computing {age} Gyr population.")
-        wdlf.set_sfr_model(mode="burst", age=age * 1e9, duration=duration)
 
-        # Construct the interpolator
-        wdlf.compute_cooling_age_interpolator(interpolator="RBF", scaling_factor=(1.0 + delta_cooling))
+        print(f"Currently computing {age} Gyr population.")
+        wdlf.set_sfr_model(mode="burst", age=age * 1e9, duration=duration * 1e9)
 
         os.makedirs(f"./bootstrap_sample_folder/sample_{i}", exist_ok=True)
         # WDLF in Mbol
         wdlf.compute_density(
-            mag_obs_optimal,
+            Mag,
             interpolator="RBF",
             normed=False,
             epsabs=1e-12,
             epsrel=1e-12,
-            limit=1000000,
-            n_points=10000,
+            limit=10000,
+            n_points=50,
             folder=f"./bootstrap_sample_folder/sample_{i}",
             filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}.csv",
             save_csv=True,
@@ -139,6 +123,5 @@ for i, (delta_imf, delta_ms, delta_ifmr_m, delta_ifmr_c, delta_cooling) in enume
             display=False,
             savefig=True,
             folder=f"./bootstrap_sample_folder/sample_{i}",
-            filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}.png",
+            filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}",
         )
-        break
