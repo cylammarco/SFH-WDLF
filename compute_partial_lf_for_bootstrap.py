@@ -86,6 +86,7 @@ Mag = np.arange(5.0, 18.0, 0.1)
 ) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy").T
 
 idx = len(sys.argv[1])
+print(f"Processing bootstrap sample {idx}...")
 
 delta_imf = imf_samples[idx]
 delta_ms = ms_samples[idx]
