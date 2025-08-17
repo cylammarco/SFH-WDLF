@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -84,44 +85,49 @@ Mag = np.arange(5.0, 18.0, 0.1)
     _,
 ) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy").T
 
-for i, (delta_imf, delta_ms, delta_ifmr_m, delta_ifmr_c, delta_cooling) in enumerate(
-    zip(imf_samples, ms_samples, ifmr_m_samples, ifmr_c_samples, cooling_samples)
-):
-    print(
-        f"Currently computing WDLF with imf delta={delta_imf:.4f}, ms delta={delta_ms:.4f}, "
-        f"ifmr_m delta={delta_ifmr_m:.4f}, ifmr_c delta={delta_ifmr_c:.4f}, cooling delta={delta_cooling:.4f}."
+idx = len(sys.argv[1])
+
+delta_imf = imf_samples[idx]
+delta_ms = ms_samples[idx]
+delta_ifmr_m = ifmr_m_samples[idx]
+delta_ifmr_c = ifmr_c_samples[idx]
+delta_cooling = cooling_samples[idx]
+
+print(
+    f"Currently computing WDLF with imf delta={delta_imf:.4f}, ms delta={delta_ms:.4f}, "
+    f"ifmr_m delta={delta_ifmr_m:.4f}, ifmr_c delta={delta_ifmr_c:.4f}, cooling delta={delta_cooling:.4f}."
+)
+wdlf.set_imf_model(model="manual", imf_function=imf_function(delta_imf))
+wdlf.set_ms_model(model="manual", ms_function=ms_function(delta_ms))
+wdlf.set_ifmr_model(
+    model="manual",
+    ifmr_function=ifmr_function(delta_ifmr_m, delta_ifmr_c),
+)
+# Construct the interpolator
+wdlf.compute_cooling_age_interpolator(interpolator="RBF", scaling_factor=(1.0 + delta_cooling))
+
+for age, duration in zip(partial_age_optimal, partial_age_duration):
+
+    print(f"Currently computing {age} Gyr population.")
+    wdlf.set_sfr_model(mode="burst", age=age * 1e9, duration=duration * 1e9)
+
+    os.makedirs(f"./bootstrap_sample_folder/sample_{idx}", exist_ok=True)
+    # WDLF in Mbol
+    wdlf.compute_density(
+        Mag,
+        interpolator="RBF",
+        normed=False,
+        epsabs=1e-12,
+        epsrel=1e-12,
+        limit=10000,
+        n_points=50,
+        folder=f"./bootstrap_sample_folder/sample_{idx}",
+        filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}.csv",
+        save_csv=True,
     )
-    wdlf.set_imf_model(model="manual", imf_function=imf_function(delta_imf))
-    wdlf.set_ms_model(model="manual", ms_function=ms_function(delta_ms))
-    wdlf.set_ifmr_model(
-        model="manual",
-        ifmr_function=ifmr_function(delta_ifmr_m, delta_ifmr_c),
+    wdlf.plot_wdlf(
+        display=False,
+        savefig=True,
+        folder=f"./bootstrap_sample_folder/sample_{idx}",
+        filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}",
     )
-    # Construct the interpolator
-    wdlf.compute_cooling_age_interpolator(interpolator="RBF", scaling_factor=(1.0 + delta_cooling))
-
-    for age, duration in zip(partial_age_optimal, partial_age_duration):
-
-        print(f"Currently computing {age} Gyr population.")
-        wdlf.set_sfr_model(mode="burst", age=age * 1e9, duration=duration * 1e9)
-
-        os.makedirs(f"./bootstrap_sample_folder/sample_{i}", exist_ok=True)
-        # WDLF in Mbol
-        wdlf.compute_density(
-            Mag,
-            interpolator="RBF",
-            normed=False,
-            epsabs=1e-12,
-            epsrel=1e-12,
-            limit=10000,
-            n_points=50,
-            folder=f"./bootstrap_sample_folder/sample_{i}",
-            filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}.csv",
-            save_csv=True,
-        )
-        wdlf.plot_wdlf(
-            display=False,
-            savefig=True,
-            folder=f"./bootstrap_sample_folder/sample_{i}",
-            filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}",
-        )
