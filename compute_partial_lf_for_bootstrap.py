@@ -112,7 +112,7 @@ for age, duration in zip(partial_age_optimal, partial_age_duration):
     print(f"Currently computing {age} Gyr population.")
     wdlf.set_sfr_model(mode="burst", age=age * 1e9, duration=duration * 1e9)
 
-    os.makedirs(f"./bootstrap_sample_folder/sample_{idx}", exist_ok=True)
+    os.makedirs(f"./SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}", exist_ok=True)
     # WDLF in Mbol
     wdlf.compute_density(
         Mag,
@@ -122,13 +122,13 @@ for age, duration in zip(partial_age_optimal, partial_age_duration):
         epsrel=1e-12,
         limit=10000,
         n_points=50,
-        folder=f"./bootstrap_sample_folder/sample_{idx}",
+        folder=f"./SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}",
         filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}.csv",
         save_csv=True,
     )
     wdlf.plot_wdlf(
         display=False,
         savefig=True,
-        folder=f"./bootstrap_sample_folder/sample_{idx}",
+        folder=f"./SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}",
         filename=f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}",
     )
