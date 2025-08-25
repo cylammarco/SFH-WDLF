@@ -449,3 +449,112 @@ np.save(
     f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_lsq_solution_20pc_subset_sample_{idx}",
     lsq_res_20pc_subset,
 )
+
+
+recomputed_wdlf_optimal = np.nansum(solution_optimal * np.array(partial_wdlf_optimal).T, axis=1)
+recomputed_wdlf_optimal_lsq = np.nansum(solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1)
+recomputed_wdlf_optimal_20pc_subset = np.nansum(solution_optimal_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1)
+recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
+    solution_optimal_lsq_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1
+)
+
+
+wdlf_err_low = np.nansum((solution_lower) * np.array(partial_wdlf_optimal).T, axis=1)
+wdlf_err_high = np.nansum((solution_upper) * np.array(partial_wdlf_optimal).T, axis=1)
+wdlf_err_low_20pc_subset = np.nansum((solution_lower_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
+wdlf_err_high_20pc_subset = np.nansum((solution_upper_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
+
+
+# append for plotting the first bin
+solution_optimal_lsq = np.insert(solution_optimal_lsq, 0, 0.0)
+solution_optimal = np.insert(solution_optimal, 0, 0.0)
+solution_upper = np.insert(solution_upper, 0, 0.0)
+solution_lower = np.insert(solution_lower, 0, 0.0)
+solution_optimal_lsq_20pc_subset = np.insert(solution_optimal_lsq_20pc_subset, 0, 0.0)
+solution_optimal_20pc_subset = np.insert(solution_optimal_20pc_subset, 0, 0.0)
+solution_upper_20pc_subset = np.insert(solution_upper_20pc_subset, 0, 0.0)
+solution_lower_20pc_subset = np.insert(solution_lower_20pc_subset, 0, 0.0)
+# append for plotting the last bin
+solution_optimal_lsq = np.append(solution_optimal_lsq, 0.0)
+solution_optimal = np.append(solution_optimal, 0.0)
+solution_upper = np.append(solution_upper, 0.0)
+solution_lower = np.append(solution_lower, 0.0)
+solution_optimal_lsq_20pc_subset = np.append(solution_optimal_lsq_20pc_subset, 0.0)
+solution_optimal_20pc_subset = np.append(solution_optimal_20pc_subset, 0.0)
+solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
+solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
+
+
+normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
+normalisation_this_work_20pc_subset = (
+    np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset) * 1e9
+)
+bin_norm_this_work = np.concatenate(
+    [
+        [partial_age_optimal[1] - partial_age_optimal[0]],
+        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:]) / 2.0,
+        [partial_age_optimal[-1] - partial_age_optimal[-2]],
+    ]
+)
+
+
+sfh_mcmc = solution_optimal * normalisation_this_work / bin_norm_this_work
+sfh_lsq = solution_optimal_lsq * normalisation_this_work / bin_norm_this_work
+sfh_err_lower = solution_lower * normalisation_this_work / bin_norm_this_work
+sfh_err_upper = solution_upper * normalisation_this_work / bin_norm_this_work
+sfh_mcmc_20pc_subset = solution_optimal_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
+sfh_lsq_20pc_subset = solution_optimal_lsq_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
+sfh_err_lower_20pc_subset = solution_lower_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
+sfh_err_upper_20pc_subset = solution_upper_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
+
+
+sfh_csv_output = np.column_stack(
+    [
+        partial_age_optimal,
+        sfh_mcmc,
+        sfh_lsq,
+        sfh_err_lower,
+        sfh_err_upper,
+        sfh_mcmc_20pc_subset,
+        sfh_lsq_20pc_subset,
+        sfh_err_lower_20pc_subset,
+        sfh_err_upper_20pc_subset,
+    ]
+)
+
+np.savetxt(
+    f"SFH-WDLF-article/bootstrap_sample_folder/gcns_sfh_sample_{idx}.csv",
+    sfh_csv_output,
+)
+
+# Prepare to output CSV of the reconstructed WDLFs
+wdlf_output = (
+    recomputed_wdlf_optimal_lsq_20pc_subset
+    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
+    * np.nansum(obs_wdlf_optimal_20pc_subset)
+)
+
+wdlf_err_output = obs_wdlf_optimal_20pc_subset
+wdlf_20_output = (
+    recomputed_wdlf_optimal_lsq_20pc_subset
+    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
+    * np.nansum(obs_wdlf_optimal_20pc_subset)
+)
+
+wdlf_20_err_output = obs_wdlf_optimal_20pc_subset
+
+
+wdlf_csv_output = np.column_stack(
+    [
+        mag_obs_optimal,
+        wdlf_output,
+        wdlf_err_output,
+        wdlf_20_output,
+        wdlf_20_err_output,
+    ]
+)
+
+np.savetxt(
+    f"SFH-WDLF-article/bootstrap_sample_folder/gcns_reconstructed_wdlf_sample_{idx}.csv",
+    wdlf_csv_output,
+)
