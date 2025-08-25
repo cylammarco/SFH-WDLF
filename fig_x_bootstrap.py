@@ -104,7 +104,7 @@ for age, duration in zip(partial_age_optimal, partial_age_duration):
     print(f"Currently loading {age} Gyr population.")
     pwdlf_mag, pwdlf = np.loadtxt(
         os.path.join(
-            f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}",
+            f"bootstrap_sample_folder/sample_{idx}",
             f"montreal_co_da_20_C03_PARSECz0017_C08_{age:.4f}.csv",
         ),
         delimiter=",",
@@ -198,7 +198,7 @@ for i in range(5):
     initial_errors = (solution_upper - solution_lower) / 2.0
     solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
     np.save(
-        f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_sample_{idx}.npy",
+        f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_sample_{idx}.npy",
         np.column_stack(
             (
                 partial_age_optimal,
@@ -210,7 +210,7 @@ for i in range(5):
         ),
     )
     np.save(
-        f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_sample_{idx}.npy",
+        f"bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_sample_{idx}.npy",
         np.column_stack((mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal)),
     )
 
@@ -249,7 +249,7 @@ initial_weights = solution_optimal
 solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
 
 np.save(
-    f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_sample_{idx}.npy",
+    f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_sample_{idx}.npy",
     np.column_stack(
         (
             partial_age_optimal,
@@ -261,7 +261,7 @@ np.save(
     ),
 )
 np.save(
-    f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_sample_{idx}.npy",
+    f"bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_sample_{idx}.npy",
     np.column_stack((mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal)),
 )
 
@@ -296,7 +296,7 @@ lsq_res = least_squares(
 )
 
 np.save(
-    f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_lsq_solution_sample_{idx}",
+    f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_lsq_solution_sample_{idx}",
     lsq_res,
 )
 
@@ -338,7 +338,7 @@ for i in range(5):
     initial_errors_20pc_subset = (solution_upper_20pc_subset - solution_lower_20pc_subset) / 2.0
     solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset / np.nansum(solution_optimal_20pc_subset)
     np.save(
-        f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_20pc_subset_sample_{idx}.npy",
+        f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_20pc_subset_sample_{idx}.npy",
         np.column_stack(
             (
                 partial_age_optimal,
@@ -350,7 +350,7 @@ for i in range(5):
         ),
     )
     np.save(
-        f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_20pc_subset_sample_{idx}.npy",
+        f"bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_20pc_subset_sample_{idx}.npy",
         np.column_stack(
             (
                 mag_obs_optimal,
@@ -394,7 +394,7 @@ for i in range(ndim_optimal):
 initial_weights_20pc_subset = solution_optimal_20pc_subset
 solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset / np.nansum(solution_optimal_20pc_subset)
 np.save(
-    f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_20pc_subset_sample_{idx}.npy",
+    f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_20pc_subset_sample_{idx}.npy",
     np.column_stack(
         (
             partial_age_optimal,
@@ -406,7 +406,7 @@ np.save(
     ),
 )
 np.save(
-    f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_20pc_subset_sample_{idx}.npy",
+    f"bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_20pc_subset_sample_{idx}.npy",
     np.column_stack(
         (
             mag_obs_optimal,
@@ -446,7 +446,7 @@ lsq_res_20pc_subset = least_squares(
 )
 
 np.save(
-    f"SFH-WDLF-article/bootstrap_sample_folder/sample_{idx}/gcns_sfh_lsq_solution_20pc_subset_sample_{idx}",
+    f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_lsq_solution_20pc_subset_sample_{idx}",
     lsq_res_20pc_subset,
 )
 
@@ -523,7 +523,7 @@ sfh_csv_output = np.column_stack(
 )
 
 np.savetxt(
-    f"SFH-WDLF-article/bootstrap_sample_folder/gcns_sfh_sample_{idx}.csv",
+    f"bootstrap_sample_folder/gcns_sfh_sample_{idx}.csv",
     sfh_csv_output,
 )
 
@@ -555,6 +555,6 @@ wdlf_csv_output = np.column_stack(
 )
 
 np.savetxt(
-    f"SFH-WDLF-article/bootstrap_sample_folder/gcns_reconstructed_wdlf_sample_{idx}.csv",
+    f"bootstrap_sample_folder/gcns_reconstructed_wdlf_sample_{idx}.csv",
     wdlf_csv_output,
 )
