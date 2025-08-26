@@ -358,27 +358,6 @@ wdlf_err_high = np.nansum((solution_upper) * np.array(partial_wdlf_optimal).T, a
 wdlf_err_low_20pc_subset = np.nansum((solution_lower_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
 wdlf_err_high_20pc_subset = np.nansum((solution_upper_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
 
-
-# append for plotting the first bin
-solution_optimal_lsq = np.insert(solution_optimal_lsq, 0, 0.0)
-solution_optimal = np.insert(solution_optimal, 0, 0.0)
-solution_upper = np.insert(solution_upper, 0, 0.0)
-solution_lower = np.insert(solution_lower, 0, 0.0)
-solution_optimal_lsq_20pc_subset = np.insert(solution_optimal_lsq_20pc_subset, 0, 0.0)
-solution_optimal_20pc_subset = np.insert(solution_optimal_20pc_subset, 0, 0.0)
-solution_upper_20pc_subset = np.insert(solution_upper_20pc_subset, 0, 0.0)
-solution_lower_20pc_subset = np.insert(solution_lower_20pc_subset, 0, 0.0)
-# append for plotting the last bin
-solution_optimal_lsq = np.append(solution_optimal_lsq, 0.0)
-solution_optimal = np.append(solution_optimal, 0.0)
-solution_upper = np.append(solution_upper, 0.0)
-solution_lower = np.append(solution_lower, 0.0)
-solution_optimal_lsq_20pc_subset = np.append(solution_optimal_lsq_20pc_subset, 0.0)
-solution_optimal_20pc_subset = np.append(solution_optimal_20pc_subset, 0.0)
-solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
-solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
-
-
 normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
 normalisation_this_work_20pc_subset = (
     np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset) * 1e9
