@@ -167,56 +167,8 @@ initial_errors = stdev
 initial_weights_20pc_subset = solution_optimal_lsq_20pc_subset
 initial_errors_20pc_subset = stdev_20pc_subset
 
-n_step = 10000
-n_burn = 0
-
-for i in range(5):
-    print(i)
-    rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
-    sampler_optimal = emcee.EnsembleSampler(
-        nwalkers_optimal,
-        ndim_optimal,
-        log_probability,
-        args=(
-            obs_normed,
-            obs_err_normed,
-            pwdlf_model_optimal,
-        ),
-    )
-    sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
-    flat_samples_optimal = sampler_optimal.get_chain(discard=n_burn, flat=True)
-    solution_optimal = np.zeros(ndim_optimal)
-    solution_lower = np.zeros(ndim_optimal)
-    solution_upper = np.zeros(ndim_optimal)
-    for i in range(ndim_optimal):
-        (
-            solution_lower[i],
-            solution_optimal[i],
-            solution_upper[i],
-        ) = np.percentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
-    initial_weights = solution_optimal
-    initial_errors = (solution_upper - solution_lower) / 2.0
-    solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
-    np.save(
-        f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_sample_{idx}.npy",
-        np.column_stack(
-            (
-                partial_age_optimal,
-                partial_age_duration,
-                solution_optimal,
-                solution_lower,
-                solution_upper,
-            )
-        ),
-    )
-    np.save(
-        f"bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_sample_{idx}.npy",
-        np.column_stack((mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal)),
-    )
-
-
-n_step = 150000
-n_burn = 0
+n_step = 100000
+n_burn = 10000
 
 rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
 
@@ -303,66 +255,8 @@ np.save(
 del sampler_optimal
 del flat_samples_optimal
 
-n_step = 10000
-n_burn = 0
-
-for i in range(5):
-    rel_norm_optimal_20pc_subset = np.vstack(
-        [np.random.normal(initial_weights_20pc_subset, initial_errors_20pc_subset) for i in range(nwalkers_optimal)]
-    )
-    sampler_optimal_20pc_subset = emcee.EnsembleSampler(
-        nwalkers_optimal,
-        ndim_optimal,
-        log_probability,
-        args=(
-            obs_normed_20pc_subset,
-            obs_err_normed_20pc_subset,
-            pwdlf_model_optimal_20pc_subset,
-        ),
-    )
-    sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
-    flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(discard=n_burn, flat=True)
-    solution_optimal_20pc_subset = np.zeros(ndim_optimal)
-    solution_lower_20pc_subset = np.zeros(ndim_optimal)
-    solution_upper_20pc_subset = np.zeros(ndim_optimal)
-    for i in range(ndim_optimal):
-        (
-            solution_lower_20pc_subset[i],
-            solution_optimal_20pc_subset[i],
-            solution_upper_20pc_subset[i],
-        ) = np.percentile(
-            flat_samples_optimal_20pc_subset[:, i],
-            [31.7310508, 50.0, 68.2689492],
-        )
-    initial_weights_20pc_subset = solution_optimal_20pc_subset
-    initial_errors_20pc_subset = (solution_upper_20pc_subset - solution_lower_20pc_subset) / 2.0
-    solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset / np.nansum(solution_optimal_20pc_subset)
-    np.save(
-        f"bootstrap_sample_folder/sample_{idx}/gcns_sfh_20pc_subset_sample_{idx}.npy",
-        np.column_stack(
-            (
-                partial_age_optimal,
-                partial_age_duration,
-                solution_optimal_20pc_subset,
-                solution_lower_20pc_subset,
-                solution_upper_20pc_subset,
-            )
-        ),
-    )
-    np.save(
-        f"bootstrap_sample_folder/sample_{idx}/gcns_reconstructed_wdlf_20pc_subset_sample_{idx}.npy",
-        np.column_stack(
-            (
-                mag_obs_optimal,
-                obs_wdlf_optimal_20pc_subset,
-                obs_wdlf_err_optimal_20pc_subset,
-            )
-        ),
-    )
-
-
-n_step = 150000
-n_burn = 0
+n_step = 100000
+n_burn = 10000
 
 rel_norm_optimal_20pc_subset = np.vstack(
     [np.random.normal(initial_weights_20pc_subset, initial_weights_20pc_subset * 0.01) for i in range(nwalkers_optimal)]
