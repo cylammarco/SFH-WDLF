@@ -182,7 +182,7 @@ sampler_optimal = emcee.EnsembleSampler(
         pwdlf_model_optimal,
     ),
 )
-sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
+sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=False)
 
 flat_samples_optimal = sampler_optimal.get_chain(discard=n_burn, flat=True)
 
@@ -271,7 +271,7 @@ sampler_optimal_20pc_subset = emcee.EnsembleSampler(
         pwdlf_model_optimal_20pc_subset,
     ),
 )
-sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
+sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=False)
 flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(discard=n_burn, flat=True)
 solution_optimal_20pc_subset = np.zeros(ndim_optimal)
 solution_lower_20pc_subset = np.zeros(ndim_optimal)
