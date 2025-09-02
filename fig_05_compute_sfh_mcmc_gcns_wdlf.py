@@ -156,7 +156,7 @@ obs_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)
 initial_weights = np.ones(len(pwdlf_model_optimal)) * 1e-2
 initial_errors = initial_weights * 0.01
 
-n_step = 10000
+n_step = 20000
 n_burn = 0
 
 for i in range(5):
@@ -210,8 +210,8 @@ for i in range(5):
     )
 
 
-n_step = 150000
-n_burn = 0
+n_step = 200000
+n_burn = 20000
 
 rel_norm_optimal = np.vstack(
     [np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)]
@@ -303,7 +303,7 @@ initial_errors_20pc_subset = initial_weights_20pc_subset * 0.01
 del sampler_optimal
 del flat_samples_optimal
 
-n_step = 10000
+n_step = 20000
 n_burn = 0
 
 for i in range(5):
@@ -364,8 +364,8 @@ for i in range(5):
     )
 
 
-n_step = 150000
-n_burn = 0
+n_step = 200000
+n_burn = 20000
 
 rel_norm_optimal_20pc_subset = np.vstack(
     [
