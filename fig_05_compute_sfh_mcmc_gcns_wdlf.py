@@ -185,7 +185,7 @@ for i in range(5):
             solution_lower[i],
             solution_optimal[i],
             solution_upper[i],
-        ) = np.percentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
+        ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
 
     initial_weights = solution_optimal
     initial_errors = (solution_upper - solution_lower) / 2.0
@@ -239,7 +239,7 @@ for i in range(ndim_optimal):
         solution_lower[i],
         solution_optimal[i],
         solution_upper[i],
-    ) = np.percentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
+    ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
 
 initial_weights = solution_optimal
 
@@ -267,7 +267,7 @@ sfh_mcmc_lower = np.zeros(ndim_optimal)
 sfh_mcmc = np.zeros(ndim_optimal)
 sfh_mcmc_upper = np.zeros(ndim_optimal)
 for i in range(ndim_optimal):
-    sfh_mcmc_lower[i], sfh_mcmc[i], sfh_mcmc_upper[i] = np.percentile(
+    sfh_mcmc_lower[i], sfh_mcmc[i], sfh_mcmc_upper[i] = np.nanpercentile(
         flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492]
     )
 
@@ -333,7 +333,7 @@ for i in range(5):
             solution_lower_20pc_subset[i],
             solution_optimal_20pc_subset[i],
             solution_upper_20pc_subset[i],
-        ) = np.percentile(
+        ) = np.nanpercentile(
             flat_samples_optimal_20pc_subset[:, i],
             [31.7310508, 50.0, 68.2689492],
         )
@@ -393,7 +393,7 @@ for i in range(ndim_optimal):
         solution_lower_20pc_subset[i],
         solution_optimal_20pc_subset[i],
         solution_upper_20pc_subset[i],
-    ) = np.percentile(
+    ) = np.nanpercentile(
         flat_samples_optimal_20pc_subset[:, i],
         [31.7310508, 50.0, 68.2689492],
     )
@@ -430,7 +430,7 @@ for i in range(ndim_optimal):
         sfh_mcmc_lower_20pc_subset[i],
         sfh_mcmc_20pc_subset[i],
         sfh_mcmc_upper_20pc_subset[i],
-    ) = np.percentile(flat_samples_optimal_20pc_subset[:, i], [31.7310508, 50.0, 68.2689492])
+    ) = np.nanpercentile(flat_samples_optimal_20pc_subset[:, i], [31.7310508, 50.0, 68.2689492])
 
 sfh_mcmc_lower_20pc_subset /= np.nanmax(sfh_mcmc_20pc_subset)
 sfh_mcmc_upper_20pc_subset /= np.nanmax(sfh_mcmc_20pc_subset)
