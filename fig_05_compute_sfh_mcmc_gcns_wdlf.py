@@ -17,7 +17,7 @@ def log_probability(rel, obs_normed, err_normed, model_list):
     if not np.isfinite(log_prior(rel_norm)):
         return -np.inf
     model = rel_norm[:, None].T @ model_list
-    model /= np.nansum(model, axis=0)
+    model /= np.nansum(model, axis=1)
     residuals = (obs_normed - model) / err_normed
     log_likelihood = -0.5 * np.nansum(residuals**2 + np.log(2 * np.pi * err_normed**2))
     return log_likelihood
@@ -28,7 +28,7 @@ def residuals_function(rel, obs_normed, err_normed, model_list):
     if not np.isfinite(log_prior(rel_norm)):
         return -np.inf
     model = rel_norm[:, None].T @ model_list
-    model /= np.nansum(model, axis=0)
+    model /= np.nansum(model, axis=1)
     residuals = np.nansum(((obs_normed - model) / err_normed)**2.0)
     return residuals
 
