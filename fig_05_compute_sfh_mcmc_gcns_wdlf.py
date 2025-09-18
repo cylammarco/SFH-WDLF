@@ -16,7 +16,6 @@ def log_probability(rel, obs_normed, err_normed, model_list):
     if not np.isfinite(log_prior(rel)):
         return -np.inf
     model = rel[:, None].T @ model_list
-    model /= np.nansum(model, axis=1)
     residuals = (obs_normed - model) / err_normed
     log_likelihood = -0.5 * np.nansum(residuals**2 + np.log(2 * np.pi * err_normed**2))
     return log_likelihood
@@ -26,7 +25,6 @@ def residuals_function(rel, obs_normed, err_normed, model_list):
     if not np.isfinite(log_prior(rel)):
         return -np.inf
     model = rel[:, None].T @ model_list
-    model /= np.nansum(model, axis=1)
     residuals = np.nansum(((obs_normed - model) / err_normed)**2.0)
     return residuals
 
@@ -168,7 +166,7 @@ for i in range(5):
         args=(
             obs_normed,
             obs_err_normed,
-            pwdlf_model_optimal,
+            pwdlf_model_optimal / np.sum(pwdlf_model_optimal),
         ),
     )
     sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
@@ -222,7 +220,7 @@ sampler_optimal = emcee.EnsembleSampler(
     args=(
         obs_normed,
         obs_err_normed,
-        pwdlf_model_optimal,
+        pwdlf_model_optimal / np.sum(pwdlf_model_optimal),
     ),
 )
 sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
@@ -318,7 +316,7 @@ for i in range(5):
         args=(
             obs_normed_20pc_subset,
             obs_err_normed_20pc_subset,
-            pwdlf_model_optimal_20pc_subset,
+            pwdlf_model_optimal_20pc_subset / np.sum(pwdlf_model_optimal_20pc_subset),
         ),
     )
     sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
@@ -378,7 +376,7 @@ sampler_optimal_20pc_subset = emcee.EnsembleSampler(
     args=(
         obs_normed_20pc_subset,
         obs_err_normed_20pc_subset,
-        pwdlf_model_optimal_20pc_subset,
+        pwdlf_model_optimal_20pc_subset / np.sum(pwdlf_model_optimal_20pc_subset),
     ),
 )
 sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
