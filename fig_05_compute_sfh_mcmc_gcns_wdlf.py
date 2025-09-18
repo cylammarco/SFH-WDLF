@@ -12,7 +12,8 @@ def log_prior(theta):
         return 0.0
 
 
-def log_probability(rel_norm, obs_normed, err_normed, model_list):
+def log_probability(rel, obs_normed, err_normed, model_list):
+    rel_norm = rel / np.nansum(rel)
     if not np.isfinite(log_prior(rel_norm)):
         return -np.inf
     model = rel_norm[:, None].T @ model_list
@@ -22,7 +23,8 @@ def log_probability(rel_norm, obs_normed, err_normed, model_list):
     return log_likelihood
 
 
-def residuals_function(rel_norm, obs_normed, err_normed, model_list):
+def residuals_function(rel, obs_normed, err_normed, model_list):
+    rel_norm = rel / np.nansum(rel)
     if not np.isfinite(log_prior(rel_norm)):
         return -np.inf
     model = rel_norm[:, None].T @ model_list
