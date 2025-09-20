@@ -25,7 +25,7 @@ def residuals_function(rel, obs_normed, err_normed, model_list):
     if not np.isfinite(log_prior(rel)):
         return -np.inf
     model = rel[:, None].T @ model_list
-    residuals = np.nansum(((obs_normed - model) / err_normed)**2.0)
+    residuals = np.nansum(((obs_normed - model) / err_normed) ** 2.0)
     return residuals
 
 
@@ -89,6 +89,11 @@ age_list_3 = np.arange(0.35, 14.01, 0.01)
 age_list_3dp = np.concatenate((age_list_1, age_list_2))
 age_list_2dp = age_list_3
 
+age_half_bin_size_1 = np.ones_like(age_list_1) * 0.001 / 2.0
+age_half_bin_size_2 = np.ones_like(age_list_2) * 0.005 / 2.0
+age_half_bin_size_3 = np.ones_like(age_list_3) * 0.01 / 2.0
+age_half_bin_list = np.concatenate((age_half_bin_size_1, age_half_bin_size_2, age_half_bin_size_3))
+
 age = np.concatenate((age_list_3dp, age_list_2dp))
 
 for i in age_list_3dp:
@@ -124,16 +129,21 @@ partial_age_duration = []
 for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     pwdlf_temp = np.zeros_like(mag_obs_optimal)
     age_temp_list = []
+    age_bin_extra = []
     for i in np.where(pwdlf_mapping_bin_optimal == idx)[0]:
         pwdlf_temp += spectres(mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0)
         age_temp_list.append(age[i])
+        age_bin_extra.append(age_half_bin_list[i])
     partial_wdlf_optimal.append(pwdlf_temp)
     partial_age_optimal.append((np.max(age_temp_list) + np.min(age_temp_list)) / 2.0)
-    partial_age_duration.append(np.ptp(age_temp_list))
+    partial_age_duration.append(np.ptp(age_temp_list) + age_bin_extra[0] + age_bin_extra[-1])
 
 
 pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
 pwdlf_model_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal_20pc_subset > 0.0]
+
+pwdlf_model_optimal /= np.amax(pwdlf_model_optimal)
+pwdlf_model_optimal_20pc_subset /= np.amax(pwdlf_model_optimal_20pc_subset)
 
 nwalkers_optimal = 250
 
@@ -152,66 +162,10 @@ obs_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)
 initial_weights = np.ones(len(pwdlf_model_optimal)) * 1e-2
 initial_errors = initial_weights * 0.01
 
-n_step = 20000
-n_burn = 0
+n_step = 1000000
+n_burn = 100000
 
-for i in range(5):
-    print(i)
-    rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
-
-    sampler_optimal = emcee.EnsembleSampler(
-        nwalkers_optimal,
-        ndim_optimal,
-        log_probability,
-        args=(
-            obs_normed,
-            obs_err_normed,
-            pwdlf_model_optimal / np.sum(pwdlf_model_optimal),
-        ),
-    )
-    sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
-
-    flat_samples_optimal = sampler_optimal.get_chain(discard=n_burn, flat=True)
-
-    solution_optimal = np.zeros(ndim_optimal)
-    solution_lower = np.zeros(ndim_optimal)
-    solution_upper = np.zeros(ndim_optimal)
-    for i in range(ndim_optimal):
-        (
-            solution_lower[i],
-            solution_optimal[i],
-            solution_upper[i],
-        ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
-
-    initial_weights = solution_optimal
-    initial_errors = (solution_upper - solution_lower) / 2.0
-
-    solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
-
-    np.save(
-        "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy",
-        np.column_stack(
-            (
-                partial_age_optimal,
-                partial_age_duration,
-                solution_optimal,
-                solution_lower,
-                solution_upper,
-            )
-        ),
-    )
-    np.save(
-        "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy",
-        np.column_stack((mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal)),
-    )
-
-
-n_step = 200000
-n_burn = 20000
-
-rel_norm_optimal = np.vstack(
-    [np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)]
-)
+rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
 
 sampler_optimal = emcee.EnsembleSampler(
     nwalkers_optimal,
@@ -220,7 +174,7 @@ sampler_optimal = emcee.EnsembleSampler(
     args=(
         obs_normed,
         obs_err_normed,
-        pwdlf_model_optimal / np.sum(pwdlf_model_optimal),
+        pwdlf_model_optimal,
     ),
 )
 sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
@@ -238,6 +192,7 @@ for i in range(ndim_optimal):
     ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
 
 initial_weights = solution_optimal
+initial_errors = (solution_upper - solution_lower) / 2.0
 
 solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
 
@@ -299,75 +254,11 @@ initial_errors_20pc_subset = initial_weights_20pc_subset * 0.01
 del sampler_optimal
 del flat_samples_optimal
 
-n_step = 20000
-n_burn = 0
-
-for i in range(5):
-    rel_norm_optimal_20pc_subset = np.vstack(
-        [
-            np.random.normal(initial_weights_20pc_subset, initial_errors_20pc_subset)
-            for i in range(nwalkers_optimal)
-        ]
-    )
-    sampler_optimal_20pc_subset = emcee.EnsembleSampler(
-        nwalkers_optimal,
-        ndim_optimal,
-        log_probability,
-        args=(
-            obs_normed_20pc_subset,
-            obs_err_normed_20pc_subset,
-            pwdlf_model_optimal_20pc_subset / np.sum(pwdlf_model_optimal_20pc_subset),
-        ),
-    )
-    sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
-    flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(discard=n_burn, flat=True)
-    solution_optimal_20pc_subset = np.zeros(ndim_optimal)
-    solution_lower_20pc_subset = np.zeros(ndim_optimal)
-    solution_upper_20pc_subset = np.zeros(ndim_optimal)
-    for i in range(ndim_optimal):
-        (
-            solution_lower_20pc_subset[i],
-            solution_optimal_20pc_subset[i],
-            solution_upper_20pc_subset[i],
-        ) = np.nanpercentile(
-            flat_samples_optimal_20pc_subset[:, i],
-            [31.7310508, 50.0, 68.2689492],
-        )
-    initial_weights_20pc_subset = solution_optimal_20pc_subset
-    initial_errors_20pc_subset = (solution_upper_20pc_subset - solution_lower_20pc_subset) / 2.0
-    solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset / np.nansum(solution_optimal_20pc_subset)
-    np.save(
-        "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy",
-        np.column_stack(
-            (
-                partial_age_optimal,
-                partial_age_duration,
-                solution_optimal_20pc_subset,
-                solution_lower_20pc_subset,
-                solution_upper_20pc_subset,
-            )
-        ),
-    )
-    np.save(
-        "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal_20pc_subset.npy",
-        np.column_stack(
-            (
-                mag_obs_optimal,
-                obs_wdlf_optimal_20pc_subset,
-                obs_wdlf_err_optimal_20pc_subset,
-            )
-        ),
-    )
-
-
-n_step = 200000
-n_burn = 20000
+n_step = 1000000
+n_burn = 100000
 
 rel_norm_optimal_20pc_subset = np.vstack(
-    [
-        np.random.normal(initial_weights_20pc_subset, initial_weights_20pc_subset * 0.01)
-        for i in range(nwalkers_optimal)
-    ]
+    [np.random.normal(initial_weights_20pc_subset, initial_weights_20pc_subset * 0.01) for i in range(nwalkers_optimal)]
 )
 sampler_optimal_20pc_subset = emcee.EnsembleSampler(
     nwalkers_optimal,
@@ -376,7 +267,7 @@ sampler_optimal_20pc_subset = emcee.EnsembleSampler(
     args=(
         obs_normed_20pc_subset,
         obs_err_normed_20pc_subset,
-        pwdlf_model_optimal_20pc_subset / np.sum(pwdlf_model_optimal_20pc_subset),
+        pwdlf_model_optimal_20pc_subset,
     ),
 )
 sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
