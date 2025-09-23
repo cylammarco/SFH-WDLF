@@ -226,8 +226,36 @@ for i in range(ndim_optimal):
         solution_upper[i],
     ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
 
+# Update the weights and errors for another run
 initial_weights = solution_optimal
 initial_errors = (solution_upper - solution_lower) / 2.0
+
+rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
+
+sampler_optimal = emcee.EnsembleSampler(
+    nwalkers_optimal,
+    ndim_optimal,
+    log_probability,
+    args=(
+        obs_normed,
+        obs_err_normed,
+        pwdlf_model_optimal,
+    ),
+)
+sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
+
+flat_samples_optimal = sampler_optimal.get_chain(discard=n_burn, flat=True)
+
+solution_optimal = np.zeros(ndim_optimal)
+solution_lower = np.zeros(ndim_optimal)
+solution_upper = np.zeros(ndim_optimal)
+for i in range(ndim_optimal):
+    (
+        solution_lower[i],
+        solution_optimal[i],
+        solution_upper[i],
+    ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
+
 
 np.save(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy",
@@ -310,7 +338,39 @@ for i in range(ndim_optimal):
         flat_samples_optimal_20pc_subset[:, i],
         [31.7310508, 50.0, 68.2689492],
     )
+
+# Update the weights and errors for another run
 initial_weights_20pc_subset = solution_optimal_20pc_subset
+initial_errors_20pc_subset = (solution_upper_20pc_subset - solution_lower_20pc_subset) / 2.0
+
+rel_norm_optimal_20pc_subset = np.vstack(
+    [np.random.normal(initial_weights_20pc_subset, initial_errors_20pc_subset) for i in range(nwalkers_optimal)]
+)
+sampler_optimal_20pc_subset = emcee.EnsembleSampler(
+    nwalkers_optimal,
+    ndim_optimal,
+    log_probability,
+    args=(
+        obs_normed_20pc_subset,
+        obs_err_normed_20pc_subset,
+        pwdlf_model_optimal_20pc_subset,
+    ),
+)
+sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
+flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(discard=n_burn, flat=True)
+solution_optimal_20pc_subset = np.zeros(ndim_optimal)
+solution_lower_20pc_subset = np.zeros(ndim_optimal)
+solution_upper_20pc_subset = np.zeros(ndim_optimal)
+for i in range(ndim_optimal):
+    (
+        solution_lower_20pc_subset[i],
+        solution_optimal_20pc_subset[i],
+        solution_upper_20pc_subset[i],
+    ) = np.nanpercentile(
+        flat_samples_optimal_20pc_subset[:, i],
+        [31.7310508, 50.0, 68.2689492],
+    )
+
 np.save(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy",
     np.column_stack(
