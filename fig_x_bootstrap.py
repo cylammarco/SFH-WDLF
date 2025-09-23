@@ -52,6 +52,8 @@ Run the script with the index of the bootstrap sample as an argument:
 
 import os
 import sys
+
+import emcee
 import numpy as np
 from scipy.optimize import least_squares
 from spectresc import spectres
@@ -62,6 +64,35 @@ def log_prior(theta):
         return -np.inf
     else:
         return 0.0
+
+
+def log_probability(rel, obs_normed, err_normed, model_list):
+    """
+    Computes the log-probability of a model given observed data, errors, and a prior.
+
+    Parameters
+    ----------
+    rel : array-like
+        Relative weights or parameters to normalize and use in the model.
+    obs_normed : array-like
+        Observed data that has been normalized.
+    err_normed : array-like
+        Normalized uncertainties associated with the observed data.
+    model_list : array-like
+        List or array of model components to combine using the normalized weights.
+
+    Returns
+    -------
+    float
+        The log-probability value, which is the sum of the log-prior and log-likelihood.
+        Returns -np.inf if the prior is not finite.
+    """
+    if not np.isfinite(log_prior(rel)):
+        return -np.inf
+    model = rel[:, None].T @ model_list
+    residuals = (obs_normed - model) / err_normed
+    log_likelihood = -0.5 * np.nansum(residuals**2 + np.log(2 * np.pi * err_normed**2))
+    return log_likelihood
 
 
 def residuals_function(rel, obs_normed, err_normed, model_list):
@@ -175,18 +206,16 @@ for age, duration in zip(partial_age_optimal, partial_age_duration):
 # Stack partial WDLF models and filter for valid observed data
 pwdlf_model_optimal = np.column_stack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
 pwdlf_model_optimal_20pc_subset = np.column_stack(partial_wdlf_optimal)[:, obs_wdlf_optimal_20pc_subset > 0.0]
+pwdlf_model_optimal /= np.nansum(pwdlf_model_optimal)
+pwdlf_model_optimal_20pc_subset /= np.nansum(pwdlf_model_optimal_20pc_subset)
 
 # Normalize observed data and errors for optimization
 obs_normed = obs_wdlf_optimal[obs_wdlf_optimal > 0.0]
 obs_err_normed = obs_wdlf_err_optimal[obs_wdlf_optimal > 0.0]
-obs_err_normed /= np.sum(obs_normed)  # Normalize errors
-obs_normed /= np.sum(obs_normed)  # Normalize data
 
 # Normalize observed data and errors for the 20pc subset
 obs_normed_20pc_subset = obs_wdlf_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0]
 obs_err_normed_20pc_subset = obs_wdlf_err_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0]
-obs_err_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)  # Normalize errors
-obs_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)  # Normalize data
 
 # Load least squares solutions as starting points for optimization
 input_lsq_res = np.load(
@@ -220,19 +249,55 @@ cov_20pc_subset = (_vh_20pc_subset[_w_20pc_subset].T / _s_20pc_subset[_w_20pc_su
 ]  # Robust covariance matrix
 stdev_20pc_subset = np.sqrt(np.diag(cov_20pc_subset))  # Standard deviations
 
-# Refine solutions using a minimizer
-lsq_res = least_squares(
-    residuals_function,
-    input_solution_optimal_lsq,
+
+initial_weights = input_solution_optimal_lsq
+initial_errors = stdev
+
+n_step = 10000
+n_burn = 5000
+nwalkers_optimal = 250
+ndim_optimal = len(partial_wdlf_optimal)
+
+rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
+
+sampler_optimal = emcee.EnsembleSampler(
+    nwalkers_optimal,
+    ndim_optimal,
+    log_probability,
     args=(
         obs_normed,
         obs_err_normed,
         pwdlf_model_optimal,
     ),
-    ftol=3e-16,
-    xtol=3e-16,
-    gtol=3e-16,
-    jac="cs",
+)
+sampler_optimal.run_mcmc(rel_norm_optimal, n_step, progress=True)
+
+flat_samples_optimal = sampler_optimal.get_chain(discard=n_burn, flat=True)
+
+solution_optimal = np.zeros(ndim_optimal)
+solution_lower = np.zeros(ndim_optimal)
+solution_upper = np.zeros(ndim_optimal)
+for i in range(ndim_optimal):
+    (
+        solution_lower[i],
+        solution_optimal[i],
+        solution_upper[i],
+    ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
+
+
+# Refine solutions using a minimizer
+lsq_res = least_squares(
+    residuals_function,
+    solution_optimal,
+    args=(
+        obs_normed,
+        obs_err_normed,
+        pwdlf_model_optimal,
+    ),
+    ftol=3e-30,
+    xtol=3e-10,
+    gtol=3e-30,
+    jac="2-point",
     tr_solver="exact",
     verbose=2,
 )
@@ -248,14 +313,14 @@ lsq_res_20pc_subset = least_squares(
     residuals_function,
     input_solution_optimal_lsq_20pc_subset,
     args=(
-        obs_normed_20pc_subset,
-        obs_err_normed_20pc_subset,
+        obs_normed_20pc_subset * 1e12,
+        obs_err_normed_20pc_subset * 1e12,
         pwdlf_model_optimal_20pc_subset,
     ),
-    ftol=3e-16,
-    xtol=3e-16,
-    gtol=3e-16,
-    jac="cs",
+    ftol=3e-30,
+    xtol=3e-10,
+    gtol=3e-30,
+    jac="2-point",
     tr_solver="exact",
     verbose=2,
 )
@@ -306,9 +371,9 @@ wdlf_err_low_20pc_subset = np.nansum((solution_lower_20pc_subset) * np.array(par
 wdlf_err_high_20pc_subset = np.nansum((solution_upper_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
 
 # Normalize solutions to compute star formation history (SFH)
-normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
+normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq)
 normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset) * 1e9
+    np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset)
 )
 bin_norm_this_work = np.concatenate(
     [
@@ -319,12 +384,12 @@ bin_norm_this_work = np.concatenate(
 )
 
 # Compute SFH and its uncertainties
-sfh_lsq = solution_optimal * normalisation_this_work / bin_norm_this_work
-sfh_err_lower = solution_lower * normalisation_this_work / bin_norm_this_work
-sfh_err_upper = solution_upper * normalisation_this_work / bin_norm_this_work
-sfh_lsq_20pc_subset = solution_optimal_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
-sfh_err_lower_20pc_subset = solution_lower_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
-sfh_err_upper_20pc_subset = solution_upper_20pc_subset * normalisation_this_work_20pc_subset / bin_norm_this_work
+sfh_lsq = solution_optimal
+sfh_err_lower = solution_lower
+sfh_err_upper = solution_upper
+sfh_lsq_20pc_subset = solution_optimal_20pc_subset
+sfh_err_lower_20pc_subset = solution_lower_20pc_subset
+sfh_err_upper_20pc_subset = solution_upper_20pc_subset
 
 # Save SFH results to a CSV file
 sfh_csv_output = np.column_stack(
@@ -346,16 +411,12 @@ np.savetxt(
 
 # Prepare to output CSV of the reconstructed WDLFs
 wdlf_output = (
-    recomputed_wdlf_optimal_lsq_20pc_subset
-    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
-    * np.nansum(obs_wdlf_optimal_20pc_subset)
+    recomputed_wdlf_optimal_lsq
 )
 
 wdlf_err_output = obs_wdlf_optimal_20pc_subset
 wdlf_20_output = (
     recomputed_wdlf_optimal_lsq_20pc_subset
-    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
-    * np.nansum(obs_wdlf_optimal_20pc_subset)
 )
 
 wdlf_20_err_output = obs_wdlf_optimal_20pc_subset

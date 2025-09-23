@@ -181,9 +181,8 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
 
 pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
 pwdlf_model_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal_20pc_subset > 0.0]
-
-pwdlf_model_optimal /= np.amax(pwdlf_model_optimal)
-pwdlf_model_optimal_20pc_subset /= np.amax(pwdlf_model_optimal_20pc_subset)
+pwdlf_model_optimal /= np.nansum(pwdlf_model_optimal)
+pwdlf_model_optimal_20pc_subset /= np.nansum(pwdlf_model_optimal_20pc_subset)
 
 nwalkers_optimal = 250
 
@@ -191,13 +190,9 @@ ndim_optimal = len(partial_wdlf_optimal)
 
 obs_normed = obs_wdlf_optimal[obs_wdlf_optimal > 0.0]
 obs_err_normed = obs_wdlf_err_optimal[obs_wdlf_optimal > 0.0]
-obs_err_normed /= np.sum(obs_normed)
-obs_normed /= np.sum(obs_normed)
 
 obs_normed_20pc_subset = obs_wdlf_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0]
 obs_err_normed_20pc_subset = obs_wdlf_err_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0]
-obs_err_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)
-obs_normed_20pc_subset /= np.sum(obs_normed_20pc_subset)
 
 initial_weights = np.ones(len(pwdlf_model_optimal)) * 1e-2
 initial_errors = initial_weights * 0.01
@@ -261,10 +256,6 @@ for i in range(ndim_optimal):
     sfh_mcmc_lower[i], sfh_mcmc[i], sfh_mcmc_upper[i] = np.nanpercentile(
         flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492]
     )
-
-
-sfh_mcmc_lower /= np.nanmax(sfh_mcmc)
-sfh_mcmc_upper /= np.nanmax(sfh_mcmc)
 
 # Finally refining with a minimizer
 lsq_res = least_squares(
@@ -359,8 +350,6 @@ for i in range(ndim_optimal):
         sfh_mcmc_upper_20pc_subset[i],
     ) = np.nanpercentile(flat_samples_optimal_20pc_subset[:, i], [31.7310508, 50.0, 68.2689492])
 
-sfh_mcmc_lower_20pc_subset /= np.nanmax(sfh_mcmc_20pc_subset)
-sfh_mcmc_upper_20pc_subset /= np.nanmax(sfh_mcmc_20pc_subset)
 
 lsq_res_20pc_subset = least_squares(
     residuals_function,
