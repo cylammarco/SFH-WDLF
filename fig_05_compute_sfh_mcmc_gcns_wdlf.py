@@ -43,7 +43,7 @@ def log_probability(rel, obs_normed, err_normed, model_list):
 
 def residuals_function(rel, obs_normed, err_normed, model_list):
     """
-    Calculate the residuals for a given set of relative weights, observed data, 
+    Calculate the residuals for a given set of relative weights, observed data,
     and model predictions.
 
     Parameters
@@ -194,8 +194,8 @@ obs_err_normed = obs_wdlf_err_optimal[obs_wdlf_optimal > 0.0]
 obs_normed_20pc_subset = obs_wdlf_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0]
 obs_err_normed_20pc_subset = obs_wdlf_err_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0]
 
-initial_weights = np.ones(len(pwdlf_model_optimal)) * 1e-2
-initial_errors = initial_weights * 0.01
+initial_weights = np.ones(len(pwdlf_model_optimal)) / len(pwdlf_model_optimal)
+initial_errors = initial_weights * 0.1
 
 n_step = 1000000
 n_burn = 100000
@@ -228,8 +228,6 @@ for i in range(ndim_optimal):
 
 initial_weights = solution_optimal
 initial_errors = (solution_upper - solution_lower) / 2.0
-
-solution_optimal_normed = solution_optimal
 
 np.save(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy",
@@ -279,17 +277,14 @@ np.save(
     lsq_res,
 )
 
-initial_weights_20pc_subset = obs_wdlf_optimal
-initial_errors_20pc_subset = initial_weights_20pc_subset * 0.01
+initial_weights_20pc_subset = np.ones(len(pwdlf_model_optimal)) / len(pwdlf_model_optimal) / 10.0
+initial_errors_20pc_subset = initial_weights_20pc_subset * 0.1
 
 del sampler_optimal
 del flat_samples_optimal
 
-n_step = 1000000
-n_burn = 100000
-
 rel_norm_optimal_20pc_subset = np.vstack(
-    [np.random.normal(initial_weights_20pc_subset, initial_weights_20pc_subset * 0.01) for i in range(nwalkers_optimal)]
+    [np.random.normal(initial_weights_20pc_subset, initial_errors_20pc_subset) for i in range(nwalkers_optimal)]
 )
 sampler_optimal_20pc_subset = emcee.EnsembleSampler(
     nwalkers_optimal,
@@ -316,7 +311,6 @@ for i in range(ndim_optimal):
         [31.7310508, 50.0, 68.2689492],
     )
 initial_weights_20pc_subset = solution_optimal_20pc_subset
-solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset
 np.save(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy",
     np.column_stack(

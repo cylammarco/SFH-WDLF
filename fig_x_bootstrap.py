@@ -248,17 +248,21 @@ cov_20pc_subset = (_vh_20pc_subset[_w_20pc_subset].T / _s_20pc_subset[_w_20pc_su
     _w_20pc_subset
 ]  # Robust covariance matrix
 stdev_20pc_subset = np.sqrt(np.diag(cov_20pc_subset))  # Standard deviations
-
+stdev_20pc_subset[stdev_20pc_subset <= 1e-10] = np.sqrt(
+    input_solution_optimal_lsq_20pc_subset[stdev_20pc_subset <= 1e-10]
+)
 
 initial_weights = input_solution_optimal_lsq
+initial_weights_20pc_subset = input_solution_optimal_lsq_20pc_subset
 initial_errors = stdev
+initial_errors_20pc_subset = stdev_20pc_subset
 
-n_step = 10000
-n_burn = 5000
+n_step = 100000
+n_burn = 10000
 nwalkers_optimal = 250
 ndim_optimal = len(partial_wdlf_optimal)
 
-rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for i in range(nwalkers_optimal)])
+rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for _ in range(nwalkers_optimal)])
 
 sampler_optimal = emcee.EnsembleSampler(
     nwalkers_optimal,
@@ -297,7 +301,7 @@ lsq_res = least_squares(
     ftol=3e-30,
     xtol=3e-10,
     gtol=3e-30,
-    jac="2-point",
+    jac="cs",
     tr_solver="exact",
     verbose=2,
 )
@@ -308,19 +312,48 @@ np.save(
     lsq_res,
 )
 
+rel_norm_optimal_20pc_subset = np.vstack(
+    [np.random.normal(initial_weights_20pc_subset, initial_errors_20pc_subset) for _ in range(nwalkers_optimal)]
+)
+
+sampler_optimal_20pc_subset = emcee.EnsembleSampler(
+    nwalkers_optimal,
+    ndim_optimal,
+    log_probability,
+    args=(
+        obs_normed_20pc_subset,
+        obs_err_normed_20pc_subset,
+        pwdlf_model_optimal_20pc_subset,
+    ),
+)
+sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progress=True)
+
+flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(discard=n_burn, flat=True)
+
+solution_optimal_20pc_subset = np.zeros(ndim_optimal)
+solution_lower_20pc_subset = np.zeros(ndim_optimal)
+solution_upper_20pc_subset = np.zeros(ndim_optimal)
+for i in range(ndim_optimal):
+    (
+        solution_lower_20pc_subset[i],
+        solution_optimal_20pc_subset[i],
+        solution_upper_20pc_subset[i],
+    ) = np.nanpercentile(flat_samples_optimal_20pc_subset[:, i], [31.7310508, 50.0, 68.2689492])
+
+
 # Refine solutions for the 20pc subset using a minimizer
 lsq_res_20pc_subset = least_squares(
     residuals_function,
-    input_solution_optimal_lsq_20pc_subset,
+    solution_optimal_20pc_subset,
     args=(
-        obs_normed_20pc_subset * 1e12,
-        obs_err_normed_20pc_subset * 1e12,
+        obs_normed_20pc_subset,
+        obs_err_normed_20pc_subset,
         pwdlf_model_optimal_20pc_subset,
     ),
     ftol=3e-30,
     xtol=3e-10,
     gtol=3e-30,
-    jac="2-point",
+    jac="cs",
     tr_solver="exact",
     verbose=2,
 )
@@ -372,8 +405,8 @@ wdlf_err_high_20pc_subset = np.nansum((solution_upper_20pc_subset) * np.array(pa
 
 # Normalize solutions to compute star formation history (SFH)
 normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq)
-normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset)
+normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(
+    recomputed_wdlf_optimal_lsq_20pc_subset
 )
 bin_norm_this_work = np.concatenate(
     [
@@ -410,14 +443,10 @@ np.savetxt(
 )
 
 # Prepare to output CSV of the reconstructed WDLFs
-wdlf_output = (
-    recomputed_wdlf_optimal_lsq
-)
+wdlf_output = recomputed_wdlf_optimal_lsq
 
 wdlf_err_output = obs_wdlf_optimal_20pc_subset
-wdlf_20_output = (
-    recomputed_wdlf_optimal_lsq_20pc_subset
-)
+wdlf_20_output = recomputed_wdlf_optimal_lsq_20pc_subset
 
 wdlf_20_err_output = obs_wdlf_optimal_20pc_subset
 
