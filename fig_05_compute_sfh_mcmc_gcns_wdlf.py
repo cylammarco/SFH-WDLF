@@ -179,10 +179,12 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_age_duration.append(np.ptp(age_temp_list) + age_bin_extra[0] + age_bin_extra[-1])
 
 
-pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
-pwdlf_model_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)[:, obs_wdlf_optimal_20pc_subset > 0.0]
+pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)
+pwdlf_model_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)
 pwdlf_model_optimal /= np.nansum(pwdlf_model_optimal)
 pwdlf_model_optimal_20pc_subset /= np.nansum(pwdlf_model_optimal_20pc_subset)
+pwdlf_model_optimal = pwdlf_model_optimal[:, obs_wdlf_optimal > 0.0]
+pwdlf_model_optimal_20pc_subset = pwdlf_model_optimal_20pc_subset[:, obs_wdlf_optimal_20pc_subset > 0.0]
 
 nwalkers_optimal = 250
 
