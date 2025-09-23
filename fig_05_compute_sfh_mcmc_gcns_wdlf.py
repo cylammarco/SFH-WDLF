@@ -13,6 +13,26 @@ def log_prior(theta):
 
 
 def log_probability(rel, obs_normed, err_normed, model_list):
+    """
+    Computes the log-probability of a model given observed data, errors, and a prior.
+
+    Parameters
+    ----------
+    rel : array-like
+        Relative weights or parameters to normalize and use in the model.
+    obs_normed : array-like
+        Observed data that has been normalized.
+    err_normed : array-like
+        Normalized uncertainties associated with the observed data.
+    model_list : array-like
+        List or array of model components to combine using the normalized weights.
+
+    Returns
+    -------
+    float
+        The log-probability value, which is the sum of the log-prior and log-likelihood.
+        Returns -np.inf if the prior is not finite.
+    """
     if not np.isfinite(log_prior(rel)):
         return -np.inf
     model = rel[:, None].T @ model_list
@@ -22,6 +42,26 @@ def log_probability(rel, obs_normed, err_normed, model_list):
 
 
 def residuals_function(rel, obs_normed, err_normed, model_list):
+    """
+    Calculate the residuals for a given set of relative weights, observed data, 
+    and model predictions.
+
+    Parameters
+    ----------
+    rel : numpy.ndarray
+        Array of relative weights for the models.
+    obs_normed : numpy.ndarray
+        Normalized observed data.
+    err_normed : numpy.ndarray
+        Normalized errors associated with the observed data.
+    model_list : numpy.ndarray
+        List of model predictions, where each model is represented as an array.
+
+    Returns
+    -------
+    float
+        The computed residuals value. Returns -np.inf if the prior is not finite.
+    """
     if not np.isfinite(log_prior(rel)):
         return -np.inf
     model = rel[:, None].T @ model_list
@@ -194,7 +234,7 @@ for i in range(ndim_optimal):
 initial_weights = solution_optimal
 initial_errors = (solution_upper - solution_lower) / 2.0
 
-solution_optimal_normed = solution_optimal / np.nansum(solution_optimal)
+solution_optimal_normed = solution_optimal
 
 np.save(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy",
@@ -285,7 +325,7 @@ for i in range(ndim_optimal):
         [31.7310508, 50.0, 68.2689492],
     )
 initial_weights_20pc_subset = solution_optimal_20pc_subset
-solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset / np.nansum(solution_optimal_20pc_subset)
+solution_optimal_normed_20pc_subset = solution_optimal_20pc_subset
 np.save(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy",
     np.column_stack(
