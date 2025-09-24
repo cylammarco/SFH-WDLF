@@ -204,10 +204,13 @@ for age, duration in zip(partial_age_optimal, partial_age_duration):
     partial_wdlf_optimal.append(spectres(mag_obs_optimal, pwdlf_mag, pwdlf, fill=0.0))  # Interpolate to match bins
 
 # Stack partial WDLF models and filter for valid observed data
-pwdlf_model_optimal = np.column_stack(partial_wdlf_optimal)[:, obs_wdlf_optimal > 0.0]
-pwdlf_model_optimal_20pc_subset = np.column_stack(partial_wdlf_optimal)[:, obs_wdlf_optimal_20pc_subset > 0.0]
+pwdlf_model_optimal = np.vstack(partial_wdlf_optimal)
+pwdlf_model_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)
 pwdlf_model_optimal /= np.nansum(pwdlf_model_optimal)
 pwdlf_model_optimal_20pc_subset /= np.nansum(pwdlf_model_optimal_20pc_subset)
+pwdlf_model_optimal = pwdlf_model_optimal[obs_wdlf_optimal > 0.0][:, obs_wdlf_optimal > 0.0]
+mask_20pc = obs_wdlf_optimal_20pc_subset > 0.0
+pwdlf_model_optimal_20pc_subset = pwdlf_model_optimal_20pc_subset[mask_20pc][:, mask_20pc]
 
 # Normalize observed data and errors for optimization
 obs_normed = obs_wdlf_optimal[obs_wdlf_optimal > 0.0]
@@ -260,7 +263,9 @@ initial_errors_20pc_subset = stdev_20pc_subset
 n_step = 100000
 n_burn = 10000
 nwalkers_optimal = 250
+
 ndim_optimal = len(partial_wdlf_optimal)
+ndim_optimal_20pc_subset = len(pwdlf_model_optimal_20pc_subset)
 
 rel_norm_optimal = np.vstack([np.random.normal(initial_weights, initial_errors) for _ in range(nwalkers_optimal)])
 
@@ -318,7 +323,7 @@ rel_norm_optimal_20pc_subset = np.vstack(
 
 sampler_optimal_20pc_subset = emcee.EnsembleSampler(
     nwalkers_optimal,
-    ndim_optimal,
+    ndim_optimal_20pc_subset,
     log_probability,
     args=(
         obs_normed_20pc_subset,
@@ -330,10 +335,10 @@ sampler_optimal_20pc_subset.run_mcmc(rel_norm_optimal_20pc_subset, n_step, progr
 
 flat_samples_optimal_20pc_subset = sampler_optimal_20pc_subset.get_chain(discard=n_burn, flat=True)
 
-solution_optimal_20pc_subset = np.zeros(ndim_optimal)
-solution_lower_20pc_subset = np.zeros(ndim_optimal)
-solution_upper_20pc_subset = np.zeros(ndim_optimal)
-for i in range(ndim_optimal):
+solution_optimal_20pc_subset = np.zeros(ndim_optimal_20pc_subset)
+solution_lower_20pc_subset = np.zeros(ndim_optimal_20pc_subset)
+solution_upper_20pc_subset = np.zeros(ndim_optimal_20pc_subset)
+for i in range(ndim_optimal_20pc_subset):
     (
         solution_lower_20pc_subset[i],
         solution_optimal_20pc_subset[i],
@@ -394,14 +399,16 @@ solution_upper_20pc_subset = solution_optimal_20pc_subset + stdev_20pc_subset
 # Reconstruct WDLF using refined solutions
 recomputed_wdlf_optimal_lsq = np.nansum(solution_optimal * np.array(partial_wdlf_optimal).T, axis=1)
 recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
-    solution_optimal_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1
+    solution_optimal_20pc_subset * np.array(pwdlf_model_optimal_20pc_subset).T, axis=1
 )
 
 # Compute WDLF uncertainties
 wdlf_err_low = np.nansum((solution_lower) * np.array(partial_wdlf_optimal).T, axis=1)
 wdlf_err_high = np.nansum((solution_upper) * np.array(partial_wdlf_optimal).T, axis=1)
-wdlf_err_low_20pc_subset = np.nansum((solution_lower_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
-wdlf_err_high_20pc_subset = np.nansum((solution_upper_20pc_subset) * np.array(partial_wdlf_optimal).T, axis=1)
+wdlf_err_low_20pc_subset = np.nansum((solution_lower_20pc_subset) * np.array(pwdlf_model_optimal_20pc_subset).T, axis=1)
+wdlf_err_high_20pc_subset = np.nansum(
+    (solution_upper_20pc_subset) * np.array(pwdlf_model_optimal_20pc_subset).T, axis=1
+)
 
 # Normalize solutions to compute star formation history (SFH)
 normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq)
@@ -424,6 +431,16 @@ sfh_lsq_20pc_subset = solution_optimal_20pc_subset
 sfh_err_lower_20pc_subset = solution_lower_20pc_subset
 sfh_err_upper_20pc_subset = solution_upper_20pc_subset
 
+# Full-length arrays with zeros
+sfh_lsq_20pc_full = np.zeros_like(partial_age_optimal)
+sfh_err_lower_20pc_full = np.zeros_like(partial_age_optimal)
+sfh_err_upper_20pc_full = np.zeros_like(partial_age_optimal)
+
+# Fill only the bins where data was nonzero
+sfh_lsq_20pc_full[mask_20pc] = sfh_lsq_20pc_subset
+sfh_err_lower_20pc_full[mask_20pc] = sfh_err_lower_20pc_subset
+sfh_err_upper_20pc_full[mask_20pc] = sfh_err_upper_20pc_subset
+
 # Save SFH results to a CSV file
 sfh_csv_output = np.column_stack(
     [
@@ -431,9 +448,9 @@ sfh_csv_output = np.column_stack(
         sfh_lsq,
         sfh_err_lower,
         sfh_err_upper,
-        sfh_lsq_20pc_subset,
-        sfh_err_lower_20pc_subset,
-        sfh_err_upper_20pc_subset,
+        sfh_lsq_20pc_full,
+        sfh_err_lower_20pc_full,
+        sfh_err_upper_20pc_full,
     ]
 )
 
@@ -444,11 +461,17 @@ np.savetxt(
 
 # Prepare to output CSV of the reconstructed WDLFs
 wdlf_output = recomputed_wdlf_optimal_lsq
-
 wdlf_err_output = obs_wdlf_optimal_20pc_subset
-wdlf_20_output = recomputed_wdlf_optimal_lsq_20pc_subset
 
-wdlf_20_err_output = obs_wdlf_optimal_20pc_subset
+
+# Full-length arrays with zeros, matching the magnitude bins
+wdlf_20_full = np.zeros_like(mag_obs_optimal)
+wdlf_20_err_full = np.zeros_like(mag_obs_optimal)
+
+# Fill only bins where you had nonzero data
+mask_mag = obs_wdlf_optimal_20pc_subset > 0.0
+wdlf_20_full[mask_mag] = recomputed_wdlf_optimal_lsq_20pc_subset
+wdlf_20_err_full[mask_mag] = obs_wdlf_optimal_20pc_subset[mask_mag]
 
 # Save reconstructed WDLF results to a CSV file
 wdlf_csv_output = np.column_stack(
@@ -456,8 +479,8 @@ wdlf_csv_output = np.column_stack(
         mag_obs_optimal,
         wdlf_output,
         wdlf_err_output,
-        wdlf_20_output,
-        wdlf_20_err_output,
+        wdlf_20_full,
+        wdlf_20_err_full,
     ]
 )
 
