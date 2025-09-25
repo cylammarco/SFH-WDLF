@@ -230,6 +230,9 @@ for i in range(ndim_optimal):
         solution_upper[i],
     ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
 
+del sampler_optimal
+del flat_samples_optimal
+
 # Update the weights and errors for another run
 initial_weights = solution_optimal
 initial_errors = (solution_upper - solution_lower) / 2.0
@@ -342,6 +345,9 @@ for i in range(ndim_optimal_20pc_subset):
         flat_samples_optimal_20pc_subset[:, i],
         [31.7310508, 50.0, 68.2689492],
     )
+
+del sampler_optimal_20pc_subset
+del flat_samples_optimal_20pc_subset
 
 # Update the weights and errors for another run
 initial_weights_20pc_subset = solution_optimal_20pc_subset
