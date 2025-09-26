@@ -294,6 +294,9 @@ for i in range(ndim_optimal):
     ) = np.nanpercentile(flat_samples_optimal[:, i], [31.7310508, 50.0, 68.2689492])
 
 
+del sampler_optimal
+del flat_samples_optimal
+
 # Refine solutions using a minimizer
 lsq_res = least_squares(
     residuals_function,
@@ -345,6 +348,8 @@ for i in range(ndim_optimal_20pc_subset):
         solution_upper_20pc_subset[i],
     ) = np.nanpercentile(flat_samples_optimal_20pc_subset[:, i], [31.7310508, 50.0, 68.2689492])
 
+del sampler_optimal_20pc_subset
+del flat_samples_optimal_20pc_subset
 
 # Refine solutions for the 20pc subset using a minimizer
 lsq_res_20pc_subset = least_squares(
