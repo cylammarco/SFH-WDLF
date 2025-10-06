@@ -432,19 +432,15 @@ bin_norm_this_work = np.concatenate(
 sfh_lsq = solution_optimal
 sfh_err_lower = solution_lower
 sfh_err_upper = solution_upper
-sfh_lsq_20pc_subset = solution_optimal_20pc_subset
-sfh_err_lower_20pc_subset = solution_lower_20pc_subset
-sfh_err_upper_20pc_subset = solution_upper_20pc_subset
-
 # Full-length arrays with zeros
 sfh_lsq_20pc_full = np.zeros_like(partial_age_optimal)
 sfh_err_lower_20pc_full = np.zeros_like(partial_age_optimal)
 sfh_err_upper_20pc_full = np.zeros_like(partial_age_optimal)
 
 # Fill only the bins where data was nonzero
-sfh_lsq_20pc_full[mask_20pc] = sfh_lsq_20pc_subset
-sfh_err_lower_20pc_full[mask_20pc] = sfh_err_lower_20pc_subset
-sfh_err_upper_20pc_full[mask_20pc] = sfh_err_upper_20pc_subset
+sfh_lsq_20pc_full[mask_20pc] = solution_optimal_20pc_subset
+sfh_err_lower_20pc_full[mask_20pc] = solution_lower_20pc_subset
+sfh_err_upper_20pc_full[mask_20pc] = solution_upper_20pc_subset
 
 # Save SFH results to a CSV file
 sfh_csv_output = np.column_stack(

@@ -201,9 +201,21 @@ solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
 solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
 
 # the 1e9 is to put the y-axis in the unit per Gyr
-normalisation_this_work = np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
+# Calculate bin widths for mag_obs_optimal
+mag_obs_optimal_bin_widths = np.diff(
+    mag_obs_optimal,
+    prepend=mag_obs_optimal[0] - (mag_obs_optimal[1] - mag_obs_optimal[0]) / 2
+)
+
+normalisation_this_work = (
+    np.sum(obs_wdlf_optimal * mag_obs_optimal_bin_widths)
+    / np.sum(recomputed_wdlf_optimal_lsq * mag_obs_optimal_bin_widths)
+    * 1e9
+)
 normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset) / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset) * 1e9
+    np.sum(obs_wdlf_optimal_20pc_subset * mag_obs_optimal_bin_widths)
+    / np.sum(recomputed_wdlf_optimal_lsq * mag_obs_optimal_bin_widths)
+    * 1e9
 )
 bin_norm_this_work = np.concatenate(
     [
@@ -217,21 +229,21 @@ fig1, (ax2, ax_dummy1, ax1) = plt.subplots(nrows=3, ncols=1, figsize=(8, 10), he
 
 ax1.step(
     partial_age_optimal,
-    solution_optimal * normalisation_this_work,
+    solution_optimal / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
     label="MCMC",
 )
 ax1.step(
     partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work,
+    solution_optimal_lsq / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
     label="lsq",
     ls="dashed",
 )
 ax1.fill_between(
     partial_age_optimal,
-    solution_lower * normalisation_this_work,
-    solution_upper * normalisation_this_work,
+    solution_lower / np.nansum(solution_optimal) * normalisation_this_work,
+    solution_upper / np.nansum(solution_optimal) * normalisation_this_work,
     step="mid",
     color="lightgrey",
 )
@@ -250,25 +262,36 @@ solution_upper_20pc_subset_for_plotting[nonzero_at_20pc_subset] = solution_upper
 
 ax1.step(
     partial_age_optimal,
-    solution_optimal_20pc_subset_for_plotting * normalisation_this_work_20pc_subset * 20.0,
+    solution_optimal_20pc_subset_for_plotting
+    / np.nansum(solution_optimal_20pc_subset_for_plotting)
+    * normalisation_this_work_20pc_subset
+    * 20.0,
     where="mid",
     label="MCMC (20pc subset [x20])",
 )
 ax1.step(
     partial_age_optimal,
-    solution_optimal_lsq_20pc_subset_for_plotting * normalisation_this_work_20pc_subset * 20.0,
+    solution_optimal_lsq_20pc_subset_for_plotting
+    / np.nansum(solution_optimal_20pc_subset_for_plotting)
+    * normalisation_this_work_20pc_subset
+    * 20.0,
     where="mid",
     label="lsq (20pc subset [x20])",
     ls="dashed",
 )
 ax1.fill_between(
     partial_age_optimal,
-    solution_lower_20pc_subset_for_plotting * normalisation_this_work_20pc_subset * 20.0,
-    solution_upper_20pc_subset_for_plotting * normalisation_this_work_20pc_subset * 20.0,
+    solution_lower_20pc_subset_for_plotting
+    / np.nansum(solution_optimal_20pc_subset_for_plotting)
+    * normalisation_this_work_20pc_subset
+    * 20.0,
+    solution_upper_20pc_subset_for_plotting
+    / np.nansum(solution_optimal_20pc_subset_for_plotting)
+    * normalisation_this_work_20pc_subset
+    * 20.0,
     step="mid",
     color="lightgrey",
 )
-
 
 ax1.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
