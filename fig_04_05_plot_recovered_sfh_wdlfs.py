@@ -202,10 +202,10 @@ for i, _wdlf in enumerate(partial_wdlf_optimal[:-1]):
         lw=0.5,
     )
 
-plt.xlim(6.0, 18.0)
-plt.ylim(1e5, 3e9)
+plt.xlim(6.0, 17.5)
+plt.ylim(2e-7, 2e-2)
 plt.xlabel("Mbol [mag]")
-plt.ylabel("Arbitrary number density")
+plt.ylabel(r"Arbitrary number density [N pc$^{-3}$ mag$^{-1}$]")
 plt.yscale("log")
 plt.tight_layout()
 plt.savefig(
