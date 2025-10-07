@@ -23,6 +23,11 @@ age_list_3 = np.arange(0.35, 15.01, 0.01)
 age_list_3dp = np.concatenate((age_list_1, age_list_2))
 age_list_2dp = age_list_3
 
+age_half_bin_size_1 = np.ones_like(age_list_1) * 0.001 / 2.0
+age_half_bin_size_2 = np.ones_like(age_list_2) * 0.005 / 2.0
+age_half_bin_size_3 = np.ones_like(age_list_3) * 0.01 / 2.0
+age_half_bin_list = np.concatenate((age_half_bin_size_1, age_half_bin_size_2, age_half_bin_size_3))
+
 age = np.concatenate((age_list_3dp, age_list_2dp))
 
 for i in age_list_3dp:
@@ -104,14 +109,50 @@ cov_20pc_subset = (_vh_20pc_subset[_w_20pc_subset].T / _s_20pc_subset[_w_20pc_su
 stdev_20pc_subset = np.sqrt(np.diag(cov_20pc_subset))
 
 # from running sfh_mcmc_gcns_wdlf_optimal_resolution.py
-mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal = np.load(
-    "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
-).T
-(
-    mag_obs_optimal_20pc_subset,
-    obs_wdlf_optimal_20pc_subset,
-    obs_wdlf_err_optimal_20pc_subset,
-) = np.load("SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal_20pc_subset.npy").T
+# Load the mapped pwdlf age-mag resolution
+pwdlf_mapping_bin_optimal = np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy")
+mag_obs_optimal, resolution_optimal = np.load("SFH-WDLF-article/figure_data/mbol_resolution.npy").T
+
+mag_obs_optimal_bin_edges = np.append(
+    mag_obs_optimal - resolution_optimal * 0.5,
+    mag_obs_optimal[-1] + resolution_optimal[-1] * 0.5,
+)
+
+h_gen_optimal, b_optimal = np.histogram(
+    gcns_wdlf["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf["Vgen"],
+)
+
+e_gen_optimal, _ = np.histogram(
+    gcns_wdlf["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf["Vgen"] ** 2.0,
+)
+
+# 20pc sample
+h_gen_optimal_20pc_subset, b_optimal_20pc_subset = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"],
+)
+
+e_gen_optimal_20pc_subset, _ = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"] ** 2.0,
+)
+
+
+obs_wdlf_optimal = h_gen_optimal / resolution_optimal
+obs_wdlf_err_optimal = e_gen_optimal**0.5 / resolution_optimal
+
+obs_wdlf_optimal_20pc_subset = h_gen_optimal_20pc_subset / resolution_optimal
+obs_wdlf_err_optimal_20pc_subset = e_gen_optimal_20pc_subset**0.5 / resolution_optimal
 
 # Load the mapped pwdlf age-mag resolution
 pwdlf_mapping_bin_optimal = np.insert(np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy"), 0, 0)
@@ -119,18 +160,32 @@ pwdlf_mapping_bin_optimal = np.insert(np.load("SFH-WDLF-article/figure_data/pwdl
 # Stack up the pwdlfs to the desired resolution
 partial_wdlf_optimal = []
 partial_age_optimal = []
-partial_age_optimal.append(0.0)
+partial_age_duration = []
 for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     pwdlf_temp = np.zeros_like(mag_obs_optimal)
-    age_temp = 0.0
-    age_count = 0
+    age_temp_list = []
+    age_bin_extra = []
     for i in np.where(pwdlf_mapping_bin_optimal == idx)[0]:
         pwdlf_temp += spectres(mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0)
-        age_temp = age[i]
+        age_temp_list.append(age[i])
+        age_bin_extra.append(age_half_bin_list[i])
     partial_wdlf_optimal.append(pwdlf_temp)
-    partial_age_optimal.append(age_temp)
+    partial_age_optimal.append((np.max(age_temp_list) + np.min(age_temp_list)) / 2.0)
+    partial_age_duration.append(np.ptp(age_temp_list) + age_bin_extra[0] + age_bin_extra[-1])
 
-partial_age_optimal.append(15.0)
+
+partial_wdlf_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)
+partial_wdlf_optimal = np.vstack(partial_wdlf_optimal)
+partial_wdlf_optimal /= np.nansum(partial_wdlf_optimal)
+partial_wdlf_optimal_20pc_subset /= np.nansum(partial_wdlf_optimal_20pc_subset)
+partial_wdlf_optimal = partial_wdlf_optimal[obs_wdlf_optimal > 0.0][:, obs_wdlf_optimal > 0.0]
+partial_wdlf_optimal_20pc_subset = partial_wdlf_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0][
+    :, obs_wdlf_optimal_20pc_subset > 0.0
+]
+mag_obs_optimal_20pc_subset = mag_obs_optimal[obs_wdlf_optimal_20pc_subset > 0.0]
+partial_age_optimal_20pc_subset = np.array(partial_age_optimal)[obs_wdlf_optimal_20pc_subset > 0.0]
+partial_age_duration_20pc_subset = np.array(partial_age_duration)[obs_wdlf_optimal_20pc_subset > 0.0]
+
 
 partial_wdlf_optimal_20pc_subset = np.array(partial_wdlf_optimal)[obs_wdlf_optimal_20pc_subset > 0.0][
     :, obs_wdlf_optimal_20pc_subset > 0.0
@@ -200,48 +255,34 @@ solution_optimal_20pc_subset = np.append(solution_optimal_20pc_subset, 0.0)
 solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
 solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
 
-# the 1e9 is to put the y-axis in the unit per Gyr
-# Calculate bin widths for mag_obs_optimal
-mag_obs_optimal_bin_widths = np.diff(
-    mag_obs_optimal,
-    prepend=mag_obs_optimal[0] - (mag_obs_optimal[1] - mag_obs_optimal[0]) / 2
-)
-
 normalisation_this_work = (
-    np.sum(obs_wdlf_optimal * mag_obs_optimal_bin_widths)
-    / np.sum(recomputed_wdlf_optimal_lsq * mag_obs_optimal_bin_widths)
-    * 1e9
+    np.sum(obs_wdlf_optimal * resolution_optimal)
+    / np.sum(recomputed_wdlf_optimal_lsq)
 )
 normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset * mag_obs_optimal_bin_widths)
-    / np.sum(recomputed_wdlf_optimal_lsq * mag_obs_optimal_bin_widths)
-    * 1e9
+    np.sum(obs_wdlf_optimal_20pc_subset * resolution_optimal)
+    / np.sum(recomputed_wdlf_optimal_lsq)
 )
-bin_norm_this_work = np.concatenate(
-    [
-        [partial_age_optimal[1] - partial_age_optimal[0]],
-        partial_age_duration,
-        [partial_age_optimal[-1] - partial_age_optimal[-2]],
-    ]
-)
+partial_age_optimal_padded = np.insert(partial_age_optimal, 0, 0.0)
+partial_age_optimal_padded = np.append(partial_age_optimal_padded, 15.0)
 
 fig1, (ax2, ax_dummy1, ax1) = plt.subplots(nrows=3, ncols=1, figsize=(8, 10), height_ratios=(15, 2, 10))
 
 ax1.step(
-    partial_age_optimal,
+    partial_age_optimal_padded,
     solution_optimal / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
     label="MCMC",
 )
 ax1.step(
-    partial_age_optimal,
+    partial_age_optimal_padded,
     solution_optimal_lsq / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
     label="lsq",
     ls="dashed",
 )
 ax1.fill_between(
-    partial_age_optimal,
+    partial_age_optimal_padded,
     solution_lower / np.nansum(solution_optimal) * normalisation_this_work,
     solution_upper / np.nansum(solution_optimal) * normalisation_this_work,
     step="mid",
@@ -261,7 +302,7 @@ solution_upper_20pc_subset_for_plotting = np.zeros_like(solution_optimal)
 solution_upper_20pc_subset_for_plotting[nonzero_at_20pc_subset] = solution_upper_20pc_subset[1:-1]
 
 ax1.step(
-    partial_age_optimal,
+    partial_age_optimal_padded,
     solution_optimal_20pc_subset_for_plotting
     / np.nansum(solution_optimal_20pc_subset_for_plotting)
     * normalisation_this_work_20pc_subset
@@ -270,7 +311,7 @@ ax1.step(
     label="MCMC (20pc subset [x20])",
 )
 ax1.step(
-    partial_age_optimal,
+    partial_age_optimal_padded,
     solution_optimal_lsq_20pc_subset_for_plotting
     / np.nansum(solution_optimal_20pc_subset_for_plotting)
     * normalisation_this_work_20pc_subset
@@ -280,7 +321,7 @@ ax1.step(
     ls="dashed",
 )
 ax1.fill_between(
-    partial_age_optimal,
+    partial_age_optimal_padded,
     solution_lower_20pc_subset_for_plotting
     / np.nansum(solution_optimal_20pc_subset_for_plotting)
     * normalisation_this_work_20pc_subset
@@ -334,7 +375,7 @@ ax2.fill_between(
 )
 
 ax2.plot(
-    mag_obs_optimal_20pc_subset[nonzero_at_20pc_subset],
+    mag_obs_optimal_20pc_subset,
     recomputed_wdlf_optimal_20pc_subset
     / np.nansum(recomputed_wdlf_optimal_20pc_subset)
     * np.nansum(obs_wdlf_optimal_20pc_subset),
@@ -342,7 +383,7 @@ ax2.plot(
     color="C02",
 )
 ax2.plot(
-    mag_obs_optimal_20pc_subset[nonzero_at_20pc_subset],
+    mag_obs_optimal_20pc_subset,
     recomputed_wdlf_optimal_lsq_20pc_subset
     / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
     * np.nansum(obs_wdlf_optimal_20pc_subset),
@@ -351,7 +392,7 @@ ax2.plot(
     ls="dashed",
 )
 ax2.errorbar(
-    mag_obs_optimal_20pc_subset,
+    mag_obs_optimal,
     obs_wdlf_optimal_20pc_subset,
     yerr=[obs_wdlf_err_optimal_20pc_subset, obs_wdlf_err_optimal_20pc_subset],
     fmt="+",
@@ -362,7 +403,7 @@ ax2.errorbar(
 
 ax2.xaxis.set_ticks(np.arange(6.0, 18.1, 1.0))
 ax2.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
-ax2.set_ylabel("log(number density)")
+ax2.set_ylabel("log(number density) [N pc$^{-3}$ mag$^{-1}$]")
 ax2.set_xlim(5.75, 18.25)
 ax2.set_ylim(5e-9, 3e-3)
 ax2.set_yscale("log")
