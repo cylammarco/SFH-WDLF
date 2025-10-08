@@ -259,104 +259,29 @@ normalisation_this_work = (
     np.sum(obs_wdlf_optimal * resolution_optimal)
     / np.sum(recomputed_wdlf_optimal_lsq)
 )
-normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset * resolution_optimal)
-    / np.sum(recomputed_wdlf_optimal_lsq)
+normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset * resolution_optimal) / np.sum(
+    recomputed_wdlf_optimal_lsq_20pc_subset
 )
 partial_age_optimal_padded = np.insert(partial_age_optimal, 0, 0.0)
 partial_age_optimal_padded = np.append(partial_age_optimal_padded, 15.0)
 
-fig1, (ax2, ax_dummy1, ax1) = plt.subplots(nrows=3, ncols=1, figsize=(8, 10), height_ratios=(15, 2, 10))
+fig1, (ax1, ax_dummy1, ax2) = plt.subplots(nrows=3, ncols=1, figsize=(8, 10), height_ratios=(15, 2, 15))
 
-ax1.step(
-    partial_age_optimal_padded,
-    solution_optimal / np.nansum(solution_optimal) * normalisation_this_work,
-    where="mid",
-    label="MCMC",
-)
-ax1.step(
-    partial_age_optimal_padded,
-    solution_optimal_lsq / np.nansum(solution_optimal) * normalisation_this_work,
-    where="mid",
-    label="lsq",
-    ls="dashed",
-)
-ax1.fill_between(
-    partial_age_optimal_padded,
-    solution_lower / np.nansum(solution_optimal) * normalisation_this_work,
-    solution_upper / np.nansum(solution_optimal) * normalisation_this_work,
-    step="mid",
-    color="lightgrey",
-)
 
-# add back the zeros for plotting
-zero_at_20pc_subset = np.where(obs_wdlf_optimal_20pc_subset == 0.0)[0]
-nonzero_at_20pc_subset = np.where(obs_wdlf_optimal_20pc_subset > 0.0)[0]
-solution_optimal_20pc_subset_for_plotting = np.zeros_like(solution_optimal)
-solution_optimal_20pc_subset_for_plotting[nonzero_at_20pc_subset] = solution_optimal_20pc_subset[1:-1]
-solution_optimal_lsq_20pc_subset_for_plotting = np.zeros_like(solution_optimal)
-solution_optimal_lsq_20pc_subset_for_plotting[nonzero_at_20pc_subset] = solution_optimal_lsq_20pc_subset[1:-1]
-solution_lower_20pc_subset_for_plotting = np.zeros_like(solution_optimal)
-solution_lower_20pc_subset_for_plotting[nonzero_at_20pc_subset] = solution_lower_20pc_subset[1:-1]
-solution_upper_20pc_subset_for_plotting = np.zeros_like(solution_optimal)
-solution_upper_20pc_subset_for_plotting[nonzero_at_20pc_subset] = solution_upper_20pc_subset[1:-1]
-
-ax1.step(
-    partial_age_optimal_padded,
-    solution_optimal_20pc_subset_for_plotting
-    / np.nansum(solution_optimal_20pc_subset_for_plotting)
-    * normalisation_this_work_20pc_subset
-    * 20.0,
-    where="mid",
-    label="MCMC (20pc subset [x20])",
-)
-ax1.step(
-    partial_age_optimal_padded,
-    solution_optimal_lsq_20pc_subset_for_plotting
-    / np.nansum(solution_optimal_20pc_subset_for_plotting)
-    * normalisation_this_work_20pc_subset
-    * 20.0,
-    where="mid",
-    label="lsq (20pc subset [x20])",
-    ls="dashed",
-)
-ax1.fill_between(
-    partial_age_optimal_padded,
-    solution_lower_20pc_subset_for_plotting
-    / np.nansum(solution_optimal_20pc_subset_for_plotting)
-    * normalisation_this_work_20pc_subset
-    * 20.0,
-    solution_upper_20pc_subset_for_plotting
-    / np.nansum(solution_optimal_20pc_subset_for_plotting)
-    * normalisation_this_work_20pc_subset
-    * 20.0,
-    step="mid",
-    color="lightgrey",
-)
-
-ax1.grid()
-ax1.set_xticks(np.arange(0, 15, 2))
-ax1.set_xlim(0, 14)
-ax1.set_ylim(bottom=0)
-ax1.set_xlabel("Lookback time [Gyr]")
-ax1.set_ylabel("Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
-ax1.legend()
-
-ax_dummy1.axis("off")
-ax2.plot(
+ax1.plot(
     mag_obs_optimal,
     recomputed_wdlf_optimal / np.nansum(recomputed_wdlf_optimal) * np.nansum(obs_wdlf_optimal),
     label="Reconstructed WDLF (MCMC)",
     color="C00",
 )
-ax2.plot(
+ax1.plot(
     mag_obs_optimal,
     recomputed_wdlf_optimal_lsq / np.nansum(recomputed_wdlf_optimal_lsq) * np.nansum(obs_wdlf_optimal),
     label="Reconstructed WDLF (lsq)",
     color="C01",
     ls="dashed",
 )
-ax2.errorbar(
+ax1.errorbar(
     mag_obs_optimal,
     obs_wdlf_optimal,
     yerr=[obs_wdlf_err_optimal, obs_wdlf_err_optimal],
@@ -367,48 +292,22 @@ ax2.errorbar(
     alpha=0.7,
 )
 
-ax2.fill_between(
+ax1.fill_between(
     mag_obs_optimal,
     wdlf_err_low / np.nansum(recomputed_wdlf_optimal_lsq) * np.nansum(obs_wdlf_optimal),
     wdlf_err_high / np.nansum(recomputed_wdlf_optimal_lsq) * np.nansum(obs_wdlf_optimal),
     color="lightgrey",
 )
 
-ax2.plot(
-    mag_obs_optimal_20pc_subset,
-    recomputed_wdlf_optimal_20pc_subset
-    / np.nansum(recomputed_wdlf_optimal_20pc_subset)
-    * np.nansum(obs_wdlf_optimal_20pc_subset),
-    label="Reconstructed WDLF (MCMC, 20pc subset)",
-    color="C02",
-)
-ax2.plot(
-    mag_obs_optimal_20pc_subset,
-    recomputed_wdlf_optimal_lsq_20pc_subset
-    / np.nansum(recomputed_wdlf_optimal_lsq_20pc_subset)
-    * np.nansum(obs_wdlf_optimal_20pc_subset),
-    label="Reconstructed WDLF (lsq, 20pc subset)",
-    color="C03",
-    ls="dashed",
-)
-ax2.errorbar(
-    mag_obs_optimal,
-    obs_wdlf_optimal_20pc_subset,
-    yerr=[obs_wdlf_err_optimal_20pc_subset, obs_wdlf_err_optimal_20pc_subset],
-    fmt="+",
-    markersize=5,
-    color="black",
-    alpha=0.3,
-)
 
-ax2.xaxis.set_ticks(np.arange(6.0, 18.1, 1.0))
-ax2.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
-ax2.set_ylabel("log(number density) [N pc$^{-3}$ mag$^{-1}$]")
-ax2.set_xlim(5.75, 18.25)
-ax2.set_ylim(5e-9, 3e-3)
-ax2.set_yscale("log")
-ax2.legend(loc="lower center")
-ax2.grid()
+ax1.xaxis.set_ticks(np.arange(6.0, 18.1, 1.0))
+ax1.set_xlabel(r"M${_\mathrm{bol}}$ [mag]")
+ax1.set_ylabel("log(number density) [N pc$^{-3}$ mag$^{-1}$]")
+ax1.set_xlim(5.75, 18.25)
+ax1.set_ylim(1e-6, 3e-3)
+ax1.set_yscale("log")
+ax1.legend(loc="lower center")
+ax1.grid()
 
 # Get the Mbol to Age relation
 age_ticks = age_resolution_itp(np.arange(6.0, 18.1, 0.5))
@@ -416,21 +315,48 @@ age_ticklabels = [f"{i:.3f}" for i in age_ticks]
 
 
 # make the top axis
-ax2b = ax2.twiny()
-ax2b.set_xlim(ax2.get_xlim())
-ax2b.set_xticks(ax2.get_xticks())
-ax2b.xaxis.set_ticks(np.arange(6.0, 18.1, 0.5))
-ax2b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
-ax2b.set_xlabel("Lookback time [Gyr]")
+ax1b = ax1.twiny()
+ax1b.set_xlim(ax1.get_xlim())
+ax1b.set_xticks(ax1.get_xticks())
+ax1b.xaxis.set_ticks(np.arange(6.0, 18.1, 0.5))
+ax1b.xaxis.set_ticklabels(age_ticklabels, rotation=90)
+ax1b.set_xlabel("Lookback time [Gyr]")
 
-"""
-# change colour of the upper axis
-ax2b.xaxis.label.set_color('blue')
-ax2b.spines['top'].set_color('blue')
-ax2b.tick_params(axis='x', colors='blue')
-"""
+ax_dummy1.axis("off")
 
-plt.subplots_adjust(top=0.9, bottom=0.06, left=0.125, right=0.98, hspace=0.01)
+ax2.step(
+    partial_age_optimal_padded,
+    solution_optimal / np.nansum(solution_optimal) * normalisation_this_work,
+    where="mid",
+    label="MCMC",
+)
+ax2.step(
+    partial_age_optimal_padded,
+    solution_optimal_lsq / np.nansum(solution_optimal) * normalisation_this_work,
+    where="mid",
+    label="lsq",
+    ls="dashed",
+)
+ax2.fill_between(
+    partial_age_optimal_padded,
+    solution_lower / np.nansum(solution_optimal) * normalisation_this_work,
+    solution_upper / np.nansum(solution_optimal) * normalisation_this_work,
+    step="mid",
+    color="lightgrey",
+)
+ax2.grid()
+ax2.set_xticks(np.arange(0, 15, 2))
+ax2.set_xlim(0, 14)
+ax2.set_ylim(bottom=0)
+ax2.set_xlabel("Lookback time [Gyr]")
+ax2.set_ylabel("log(number density) [N pc$^{-3}$ mag$^{-1}$]")
+ax2.legend()
+
+# add back the zeros for plotting
+zero_at_20pc_subset = np.where(obs_wdlf_optimal_20pc_subset == 0.0)[0]
+nonzero_at_20pc_subset = np.where(obs_wdlf_optimal_20pc_subset > 0.0)[0]
+
+plt.subplots_adjust(top=0.9, bottom=0.06, left=0.125, right=0.98, hspace=0.00)
 
 fig1.savefig(
     os.path.join(

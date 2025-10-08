@@ -224,7 +224,7 @@ stdev_ratio = ((solution_upper - solution_lower) / 2.0) / sfh_stdev
 bootstrap_signal_to_best_fit_stdev = sfh_mean / ((solution_upper - solution_lower) / 2.0)
 
 # Create a 2:1 vertically stacked subplot
-fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
+fig, (ax1) = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
 
 # Top subplot: current figure
 ax1.step(
@@ -253,17 +253,16 @@ ax1.fill_between(
     color="lightgrey",
     label=r"2$\sigma$",
 )
+ax1.set_xlabel("Lookback time [Gyr]")
 ax1.set_ylabel("Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
 ax1.grid()
-
-ax1.set_xticklabels([])
 ax1.set_xlim(0, 14)
 ax1.set_ylim(0.0, 0.005)
 ax1.legend()
 
 # Calculate signal-to-noise ratio (SNR)
 # sfh_20pc_snr = sfh_20pc_mean / sfh_20pc_stdev
-
+"""
 ax2.step(
     sfh_age,
     sfh_20pc_mean / np.nansum(solution_optimal_20pc_subset) * normalisation_this_work_20pc_subset,
@@ -294,19 +293,10 @@ ax2.fill_between(
     color="lightgrey",
     label=r"2$\sigma$",
 )
-ax2.set_xlabel("Lookback time [Gyr]")
 ax2.set_ylabel("Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
 ax2.grid()
 ax2.set_xlim(0, 14)
 ax2.set_ylim(0.0, 0.00011)
-
-
-ax1.arrow(0.4, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
-ax1.arrow(1.21, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
-ax1.arrow(1.8, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
-ax1.arrow(2.245, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
-ax1.arrow(3.67, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
-ax1.arrow(8.7, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
 
 ax2.arrow(0.4, 0.0001075, 0.0, -0.000008, head_width=0.2, head_length=0.0000025, fc="k", ec="k")
 ax2.arrow(1.61, 0.0001075, 0.0, -0.000008, head_width=0.2, head_length=0.0000025, fc="k", ec="k")
@@ -315,10 +305,18 @@ ax2.arrow(3.67, 0.0001075, 0.0, -0.000008, head_width=0.2, head_length=0.0000025
 ax2.arrow(4.3, 0.0001075, 0.0, -0.000008, head_width=0.2, head_length=0.0000025, fc="k", ec="k")
 ax2.arrow(4.75, 0.0001075, 0.0, -0.000008, head_width=0.2, head_length=0.0000025, fc="k", ec="k")
 
-ax1.text(5.9, 0.00425, "Full sample", fontsize=14)
 ax2.text(5.75, 0.000085, "20pc sample", fontsize=14)
+"""
 
-plt.subplots_adjust(top=0.98, bottom=0.06, left=0.12, right=0.98, hspace=0.0)
+ax1.arrow(0.4, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
+ax1.arrow(1.21, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
+ax1.arrow(1.8, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
+ax1.arrow(2.245, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
+ax1.arrow(3.67, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
+ax1.arrow(8.7, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
+ax1.text(5.9, 0.00425, "Full sample", fontsize=14)
+
+plt.subplots_adjust(top=0.98, bottom=0.08, left=0.1, right=0.98, hspace=0.0)
 plt.savefig(f"{figure_folder}/fig_06_sfh_bootstrap_comparison.png", dpi=300)
 
 
@@ -327,35 +325,33 @@ print(sfh_age)
 fig2, ax = plt.subplots(nrows=3, ncols=2, figsize=(8, 10))
 ax = ax.flatten()
 # Tests the peaks at 0.4, 1.21, 1.8, 2.245, 3.67 and 8.7 Gyr are significant compared to their neighbors
-for i, a in enumerate([0.4, 1.21, 1.8, 2.245, 3.67, 8.7]):
+for i, a in enumerate([0.40, 1.21, 1.80, 2.25, 3.67, 8.70]):
     # Identify 0–1 Gyr bin index (get the 2 bins closest to the peak at 0.4)
     bin_idx = np.argpartition(np.abs(sfh_age - a), 1)[0:2]
     bin_idx_0 = min(bin_idx)
     bin_idx_1 = max(bin_idx)
     # Compare this bin to the sum of its two neighbors
     neighbors = [max(0, bin_idx_0 - 1), min(len(sfh_age) - 1, bin_idx_1 + 1)]
-    peak_durations = np.array(partial_age_duration)[bin_idx_0 : bin_idx_1 + 1]
-    neighbour_durations = np.array(partial_age_duration)[neighbors]
+    peak_durations = np.array(partial_age_duration)[bin_idx_0:bin_idx_1 + 1]
     peak_count = (np.array(sfh_list)[:, [bin_idx_0, bin_idx_1]] * peak_durations).sum(axis=1)
-    neighbour_count = (np.array(sfh_list)[:, neighbors] * neighbour_durations).sum(axis=1)
+    neighbour_count = (np.array(sfh_list)[:, neighbors]).mean(axis=1) * np.sum(peak_durations)
     diff = peak_count - neighbour_count
     print(f"Fraction of bootstraps with SFH({a} Gyr) > SFH(neighbors): {np.sum(diff > 0):.1f}")
     ax[i].hist(diff, bins=50, color="C0", alpha=0.3, label="2 bins")
     ax[i].axvline(0, color="k", linestyle="--")
     ax[i].set_xlabel(f"Δ = SFH({a} Gyr) - SFH(neighbors)")
-    ax[i].set_ylabel(r"N pc$^{-3}$")
-    ax[i].set_title(f"Peak around {a} Gyr")
+    ax[i].set_ylabel("Occurances")
+    ax[i].set_title(f"Peak around {a:.2f} Gyr")
     ax[i].text(0.01, 5, f"{np.mean(diff > 0)*100:.3f}%", color="C0")
 
-for i, a in enumerate([0.47, 1.32, 1.7, 2.245, 3.595, 8.365]):
-    # Use 1 bin instead
+for i, a in enumerate([0.47, 1.32, 1.70, 2.25, 3.60, 8.37]):
+    # Use 1 bin insteadOccurance
     bin_idx_single = np.argmin(np.abs(sfh_age - a))
     # Compare this bin to the mean of its two neighbors
     neighbors_single = [max(0, bin_idx_single - 1), min(len(sfh_age) - 1, bin_idx_single + 1)]
     peak_duration = np.array(partial_age_duration)[bin_idx_single]
-    neighbour_durations = np.array(partial_age_duration)[neighbors_single]
     peak_count_single = np.array(sfh_list)[:, bin_idx_single] * peak_duration
-    neighbour_count_single = (np.array(sfh_list)[:, neighbors_single] * neighbour_durations).mean(axis=1)
+    neighbour_count_single = (np.array(sfh_list)[:, neighbors_single]).mean(axis=1) * peak_duration
     diff_single = peak_count_single - neighbour_count_single
     print(f"Fraction of bootstraps with SFH({a} Gyr) > SFH(neighbors): {np.sum(diff_single > 0):.1f}")
     ax[i].hist(diff_single, bins=50, color="C1", alpha=0.3, label="1 bin")
@@ -366,39 +362,37 @@ ax[1].legend()
 plt.subplots_adjust(top=0.975, bottom=0.05, left=0.08, right=0.98, hspace=0.4)
 plt.savefig(f"{figure_folder}/fig_07_sfh_peak_significance.png", dpi=300)
 
-
+"""
 fig3, ax = plt.subplots(nrows=3, ncols=2, figsize=(8, 10))
 ax = ax.flatten()
 # Tests the peaks at 0.4, 1.61, 1.8, 2.245, 3.67 and 8.7 Gyr are significant compared to their neighbors
-for i, a in enumerate([0.4, 1.61, 2.245, 3.67, 4.3, 4.75]):
+for i, a in enumerate([0.40, 1.61, 2.25, 3.67, 4.30, 4.75]):
     # Identify 0–1 Gyr bin index (get the 2 bins closest to the peak at 0.4)
     bin_idx = np.argpartition(np.abs(sfh_age - a), 1)[0:2]
     bin_idx_0 = min(bin_idx)
     bin_idx_1 = max(bin_idx)
     # Compare this bin to the sum of its two neighbors
     neighbors = [max(0, bin_idx_0 - 1), min(len(sfh_age) - 1, bin_idx_1 + 1)]
-    peak_durations = np.array(partial_age_duration)[bin_idx_0 : bin_idx_1 + 1]
-    neighbour_durations = np.array(partial_age_duration)[neighbors]
+    peak_durations = np.array(partial_age_duration)[bin_idx_0:bin_idx_1 + 1]
     peak_count = (np.array(sfh_20pc_list)[:, [bin_idx_0, bin_idx_1]] * peak_durations).sum(axis=1)
-    neighbour_count = (np.array(sfh_20pc_list)[:, neighbors] * neighbour_durations).sum(axis=1)
+    neighbour_count = (np.array(sfh_20pc_list)[:, neighbors]).mean(axis=1) * np.sum(peak_durations)
     diff = peak_count - neighbour_count
     print(f"Fraction of bootstraps with SFH({a} Gyr) > SFH(neighbors): {np.sum(diff > 0):.1f}")
     ax[i].hist(diff, bins=50, color="C0", alpha=0.3, label="2 bins")
     ax[i].axvline(0, color="k", linestyle="--")
     ax[i].set_xlabel(f"Δ = SFH({a} Gyr) - SFH(neighbors)")
-    ax[i].set_ylabel(r"N pc$^{-3}$")
-    ax[i].set_title(f"Peak around {a} Gyr")
+    ax[i].set_ylabel("Occurances")
+    ax[i].set_title(f"Peak around {a:.2f} Gyr")
     ax[i].text(0.00005, 5, f"{np.mean(diff > 0)*100:.3f}%", color="C0")
 
-for i, a in enumerate([0.47, 1.52, 2.245, 3.595, 4.2, 4.655]):
+for i, a in enumerate([0.47, 1.52, 2.25, 3.60, 4.20, 4.66]):
     # Use 1 bin instead
     bin_idx_single = np.argmin(np.abs(sfh_age - a))
     # Compare this bin to the mean of its two neighbors
     neighbors_single = [max(0, bin_idx_single - 1), min(len(sfh_age) - 1, bin_idx_single + 1)]
     peak_duration = np.array(partial_age_duration)[bin_idx_single]
-    neighbour_durations = np.array(partial_age_duration)[neighbors_single]
     peak_count_single = np.array(sfh_20pc_list)[:, bin_idx_single] * peak_duration
-    neighbour_count_single = (np.array(sfh_20pc_list)[:, neighbors_single] * neighbour_durations).mean(axis=1)
+    neighbour_count_single = (np.array(sfh_20pc_list)[:, neighbors_single]).mean(axis=1) * peak_duration
     diff_single = peak_count_single - neighbour_count_single
     print(f"Fraction of bootstraps with SFH({a} Gyr) > SFH(neighbors): {np.sum(diff_single > 0):.1f}")
     ax[i].hist(diff_single, bins=50, color="C1", alpha=0.3, label="1 bin")
@@ -408,7 +402,7 @@ for i, a in enumerate([0.47, 1.52, 2.245, 3.595, 4.2, 4.655]):
 ax[1].legend()
 plt.subplots_adjust(top=0.95, bottom=0.075, left=0.075, right=0.98, hspace=0.4)
 plt.savefig(f"{figure_folder}/fig_08_sfh_peak_significance_20pc_subset.png", dpi=300)
-
+"""
 
 np.savetxt(
     f"{figure_data_folder}/fig_06_sfh_bootstrap_data.csv",

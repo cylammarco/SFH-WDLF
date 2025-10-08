@@ -3,19 +3,17 @@ import os
 from matplotlib import pyplot as plt
 import numpy as np
 from spectresc import spectres
-from WDPhotTools.atmosphere_model_reader import AtmosphereModelReader
-from WDPhotTools.theoretical_lf import WDLF
-from pynverse import inversefunc
-
 
 plt.rcParams.update({"font.size": 12})
 
 figure_folder = "SFH-WDLF-article/figures"
+boostrap_folder = "SFH-WDLF-article/bootstrap_sample_folder"
 
 # Load the GCNS data
 gcns_wdlf = np.load(
     "pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz"
 )["data"]
+gcns_wdlf_20pc_subset = gcns_wdlf[gcns_wdlf["dpc"] <= 20.0]
 
 # Load the pwdlfs
 data = []
@@ -32,7 +30,7 @@ for i in age_list_3dp:
         np.loadtxt(
             os.path.join(
                 "output",
-                f"montreal_co_da_20_K01_PARSECz0014_C08_{i:.3f}_Mbol.csv",
+                f"montreal_co_da_20_C03_PARSECz0017_C08_{i:.3f}_Mbol.csv",
             ),
             delimiter=",",
         )
@@ -43,7 +41,7 @@ for i in age_list_2dp:
         np.loadtxt(
             os.path.join(
                 "output",
-                f"montreal_co_da_20_K01_PARSECz0014_C08_{i:.2f}_Mbol.csv",
+                f"montreal_co_da_20_C03_PARSECz0017_C08_{i:.2f}_Mbol.csv",
             ),
             delimiter=",",
         )
@@ -55,6 +53,7 @@ mag_pwdlf = data[0][:, 0]
 
 (
     partial_age_optimal,
+    partial_age_duration,
     solution_optimal,
     solution_lower,
     solution_upper,
@@ -63,12 +62,11 @@ mag_pwdlf = data[0][:, 0]
 ).T
 (
     partial_age_optimal,
+    partial_age_duration,
     solution_optimal_20pc_subset,
     solution_lower_20pc_subset,
     solution_upper_20pc_subset,
-) = np.load(
-    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy"
-).T
+) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy").T
 
 # The lsq solution
 lsq_res = np.load(
@@ -91,27 +89,67 @@ _w = _s > tol
 cov = (_vh[_w].T / _s[_w] ** 2) @ _vh[_w]  # robust covariance matrix
 stdev = np.sqrt(np.diag(cov))
 
-# from running sfh_mcmc_gcns_wdlf_optimal_resolution.py
-mag_obs_optimal, obs_wdlf_optimal, obs_wdlf_err_optimal = np.load(
-    "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal.npy"
-).T
-(
-    mag_obs_optimal,
-    obs_wdlf_optimal_20pc_subset,
-    obs_wdlf_err_optimal_20pc_subset,
-) = np.load(
-    "SFH-WDLF-article/figure_data/gcns_reconstructed_wdlf_optimal_resolution_bin_optimal_20pc_subset.npy"
-).T
-
 # Load the mapped pwdlf age-mag resolution
 pwdlf_mapping_bin_optimal = np.insert(
     np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy"), 0, 0
 )
+mag_obs_optimal, resolution_optimal = np.load("SFH-WDLF-article/figure_data/mbol_resolution.npy").T
+mag_obs_optimal_bin_edges = np.append(
+    mag_obs_optimal - resolution_optimal * 0.5,
+    mag_obs_optimal[-1] + resolution_optimal[-1] * 0.5,
+)
+
+h_gen_optimal_20pc_subset, b_optimal_20pc_subset = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"],
+)
+
+mag_obs_optimal_bin_edges = np.append(
+    mag_obs_optimal - resolution_optimal * 0.5,
+    mag_obs_optimal[-1] + resolution_optimal[-1] * 0.5,
+)
+
+h_gen_optimal, b_optimal = np.histogram(
+    gcns_wdlf["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf["Vgen"],
+)
+
+e_gen_optimal, _ = np.histogram(
+    gcns_wdlf["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf["Vgen"] ** 2.0,
+)
+
+# 20pc sample
+h_gen_optimal_20pc_subset, b_optimal_20pc_subset = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"],
+)
+
+e_gen_optimal_20pc_subset, _ = np.histogram(
+    gcns_wdlf_20pc_subset["Mbol"],
+    bins=mag_obs_optimal_bin_edges,
+    range=(2.25, 18.25),
+    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"] ** 2.0,
+)
+
+obs_wdlf_optimal = h_gen_optimal / resolution_optimal
+obs_wdlf_err_optimal = e_gen_optimal**0.5 / resolution_optimal
+
+obs_wdlf_optimal_20pc_subset = h_gen_optimal_20pc_subset / resolution_optimal
+obs_wdlf_err_optimal_20pc_subset = e_gen_optimal_20pc_subset**0.5 / resolution_optimal
 
 # Stack up the pwdlfs to the desired resolution
 partial_wdlf_optimal = []
 partial_age_optimal = []
-partial_age_optimal.append(0.0)
+
 for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     pwdlf_temp = np.zeros_like(mag_obs_optimal)
     age_temp = 0.0
@@ -124,7 +162,20 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_wdlf_optimal.append(pwdlf_temp)
     partial_age_optimal.append(age_temp)
 
-partial_age_optimal.append(15.0)
+
+partial_wdlf_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)
+partial_wdlf_optimal = np.vstack(partial_wdlf_optimal)
+partial_wdlf_optimal /= np.nansum(partial_wdlf_optimal)
+partial_wdlf_optimal_20pc_subset /= np.nansum(partial_wdlf_optimal_20pc_subset)
+partial_wdlf_optimal = partial_wdlf_optimal[obs_wdlf_optimal > 0.0][:, obs_wdlf_optimal > 0.0]
+partial_wdlf_optimal_20pc_subset = partial_wdlf_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0][
+    :, obs_wdlf_optimal_20pc_subset > 0.0
+]
+partial_wdlf_optimal_20pc_subset = np.array(partial_wdlf_optimal)[obs_wdlf_optimal_20pc_subset > 0.0][
+    :, obs_wdlf_optimal_20pc_subset > 0.0
+]
+partial_age_optimal_20pc_subset = np.array(partial_age_optimal)[obs_wdlf_optimal_20pc_subset > 0.0]
+#
 
 # only compute for the wdlf integrated number density
 recomputed_wdlf_optimal = np.nansum(
@@ -134,66 +185,12 @@ recomputed_wdlf_optimal_lsq = np.nansum(
     solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1
 )
 recomputed_wdlf_optimal_20pc_subset = np.nansum(
-    solution_optimal_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1
+    solution_optimal_20pc_subset * np.array(partial_wdlf_optimal_20pc_subset).T, axis=1
 )
 recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
-    solution_optimal_lsq_20pc_subset * np.array(partial_wdlf_optimal).T, axis=1
+    solution_optimal_lsq_20pc_subset * np.array(partial_wdlf_optimal_20pc_subset).T, axis=1
 )
 
-# append for plotting the first bin
-solution_optimal_lsq = np.insert(solution_optimal_lsq, 0, 0.0)
-solution_optimal = np.insert(solution_optimal, 0, 0.0)
-solution_upper = np.insert(solution_upper, 0, 0.0)
-solution_lower = np.insert(solution_lower, 0, 0.0)
-solution_optimal_lsq_20pc_subset = np.insert(
-    solution_optimal_lsq_20pc_subset, 0, 0.0
-)
-solution_optimal_20pc_subset = np.insert(solution_optimal_20pc_subset, 0, 0.0)
-solution_upper_20pc_subset = np.insert(solution_upper_20pc_subset, 0, 0.0)
-solution_lower_20pc_subset = np.insert(solution_lower_20pc_subset, 0, 0.0)
-
-# append for plotting the last bin
-solution_optimal_lsq = np.append(solution_optimal_lsq, 0.0)
-solution_optimal = np.append(solution_optimal, 0.0)
-solution_upper = np.append(solution_upper, 0.0)
-solution_lower = np.append(solution_lower, 0.0)
-solution_optimal_lsq_20pc_subset = np.append(
-    solution_optimal_lsq_20pc_subset, 0.0
-)
-solution_optimal_20pc_subset = np.append(solution_optimal_20pc_subset, 0.0)
-solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
-solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
-
-"""
-# construct the inverse ifmr, aka fimr
-inv_ifmr = inversefunc(WDLF()._ifmr)
-
-# Get the (Mbol, Age) to WD mass relation
-atm = AtmosphereModelReader()
-Mbol_age_to_mass = atm.interp_am(dependent=["mass"], independent=["Mbol", "age"])
-
-
-mass_ms_min = optimize.fminbound(
-                WDLF._find_mass_ms_min,
-                0.5,
-                8.0,
-                args=[mag_i],
-                xtol=1e-8,
-                maxfun=10000,
-            )
-
-# Get the pWDLF
-for pwdlf, age in zip(partial_wdlf_optimal, partial_age_optimal):
-    
-    # Get the WD mass distribution
-    wd_mass_distribution = Mbol_age_to_mass(mag_obs_optimal[pwdlf>0], age * 1e9)
-
-    # Get the MS mass distribution
-    ms_mass_distribution = inv_ifmr(wd_mass_distribution)
-
-    # Get the mean mass from the MS mass distribution
-
-"""
 
 # Cignoni+ 2006 (only relative SFH)
 cignoni_data = np.loadtxt(
@@ -402,23 +399,10 @@ mag_bin_norm_this_work = np.concatenate(
         [mag_obs_optimal[-1] - mag_obs_optimal[-2]],
     ]
 )
-# This gives the total number
-bin_norm_this_work = np.concatenate(
-    [
-        [partial_age_optimal[1] - partial_age_optimal[0]],
-        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
-        / 2.0,
-        [partial_age_optimal[-1] - partial_age_optimal[-2]],
-    ]
-)
 
-normalisation_this_work = (
-    np.sum(obs_wdlf_optimal) / np.sum(recomputed_wdlf_optimal_lsq) * 1e9
-)
-normalisation_this_work_20pc_subset = (
-    np.sum(obs_wdlf_optimal_20pc_subset)
-    / np.sum(recomputed_wdlf_optimal_lsq_20pc_subset)
-    * 1e9
+normalisation_this_work = np.sum(obs_wdlf_optimal * resolution_optimal) / np.sum(recomputed_wdlf_optimal_lsq)
+normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset * resolution_optimal) / np.sum(
+    recomputed_wdlf_optimal_lsq_20pc_subset
 )
 
 # These are to normalise to match the GCNS WDLF integrated number density
@@ -431,14 +415,27 @@ normalisation_tremblay = np.sum(obs_wdlf_optimal) / np.sum(
 )
 normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
-bin_norm_this_work = np.concatenate(
-    [
-        [partial_age_optimal[1] - partial_age_optimal[0]],
-        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
-        / 2.0,
-        [partial_age_optimal[-1] - partial_age_optimal[-2]],
-    ]
-)
+# get the bootstrapped SFH
+
+sfh_list = []
+wdlf_list = []
+sfh_20pc_list = []
+wdlf_20pc_list = []
+
+for i in range(1000):
+    sfh = np.genfromtxt(f"{boostrap_folder}/sample_{i}/gcns_sfh_sample_{i}.csv").T[1]
+    wdlf = np.genfromtxt(f"{boostrap_folder}/sample_{i}/gcns_reconstructed_wdlf_sample_{i}.csv").T[1]
+    sfh_list.append(sfh)
+    wdlf_list.append(wdlf)
+
+
+sfh_age = np.genfromtxt(f"{boostrap_folder}/sample_{i}/gcns_sfh_sample_{i}.csv").T[0]
+sfh_mean = np.mean(sfh_list, axis=0)
+sfh_stdev = np.std(sfh_list, axis=0)
+wdlf_mag = np.genfromtxt(f"{boostrap_folder}/sample_{i}/gcns_reconstructed_wdlf_sample_{i}.csv").T[0]
+wdlf_mean = np.mean(wdlf_list, axis=0)
+wdlf_stdev = np.std(wdlf_list, axis=0)
+
 
 fig6, (ax1, ax2, ax3) = plt.subplots(
     nrows=3, ncols=1, figsize=(8, 12), height_ratios=(10, 10, 10), sharex=True
@@ -449,23 +446,20 @@ fig6, (ax1, ax2, ax3) = plt.subplots(
 
 # plot data from this work
 ax1.step(
-    partial_age_optimal,
-    solution_optimal_lsq * normalisation_this_work / bin_norm_this_work,
+    sfh_age,
+    solution_optimal_lsq / np.sum(solution_optimal) * normalisation_this_work,
     where="mid",
     color="black",
     label="pWDLF (this work)",
 )
 
 ax1.step(
-    partial_age_optimal,
-    solution_optimal_lsq_20pc_subset
-    * 100
-    * normalisation_this_work_20pc_subset / bin_norm_this_work,
+    sfh_age,
+    sfh_mean / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
-    label="20pc subset [x100]",
-    color="black",
-    ls="dashed",
-    alpha=0.8,
+    color="red",
+    linestyle="dashed",
+    label="bootstrap mean (this work)",
 )
 
 ax1.step(
@@ -473,8 +467,7 @@ ax1.step(
     rowell_sfh,
     where="mid",
     label="Rowell 2013",
-    color="black",
-    alpha=0.6,
+    color="grey",
 )
 
 ax1.step(
@@ -482,8 +475,8 @@ ax1.step(
     rowell_2023_sfh,
     where="mid",
     label="Rowell (this work)",
-    color="black",
-    alpha=0.4,
+    color="purple",
+    linestyle="dashed",
 )
 
 
@@ -532,37 +525,18 @@ ax2.vlines(
     label="Isern 2019",
 )
 
+
+# Number count
+
 # plot Mor+ data
-ax2.step(
+ax3.step(
     mor_time,
-    mor_sfh
-    / 25
-    * np.max(
-        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
-    ),
+    mor_sfh / max(mor_sfh),
     where="mid",
     color="C3",
     label="Mor+ 2019",
     linestyle="dashed",
 )
-ax2.vlines(
-    mor_time,
-    (mor_sfh - mor_sigma_low)
-    / 25
-    * np.max(
-        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
-    ),
-    (mor_sfh + mor_sigma_up)
-    / 25
-    * np.max(
-        solution_optimal_lsq * normalisation_this_work / age_bin_norm_this_work
-    ),
-    linestyle="dashed",
-    color="C3",
-)
-
-
-# Number count
 
 # plot Reid+ data
 ax3.step(
@@ -611,9 +585,9 @@ ax3.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 
-ax1.set_ylim(0, 0.0065)
-ax2.set_ylim(0, 0.00425)
-ax3.set_ylim(0, 1.5)
+ax1.set_ylim(0, 0.0055)
+ax2.set_ylim(0, 0.00525)
+ax3.set_ylim(0, 1.55)
 
 ax3.set_xlabel("Lookback time [Gyr]")
 
@@ -633,6 +607,6 @@ plt.subplots_adjust(hspace=0)
 fig6.savefig(
     os.path.join(
         figure_folder,
-        "fig_11_compare_sfh.png",
+        "fig_10_compare_sfh.png",
     )
 )
