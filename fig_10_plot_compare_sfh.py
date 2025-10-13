@@ -10,9 +10,7 @@ figure_folder = "SFH-WDLF-article/figures"
 boostrap_folder = "SFH-WDLF-article/bootstrap_sample_folder"
 
 # Load the GCNS data
-gcns_wdlf = np.load(
-    "pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz"
-)["data"]
+gcns_wdlf = np.load("pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz")["data"]
 gcns_wdlf_20pc_subset = gcns_wdlf[gcns_wdlf["dpc"] <= 20.0]
 
 # Load the pwdlfs
@@ -57,9 +55,7 @@ mag_pwdlf = data[0][:, 0]
     solution_optimal,
     solution_lower,
     solution_upper,
-) = np.load(
-    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy"
-).T
+) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy").T
 (
     partial_age_optimal,
     partial_age_duration,
@@ -90,9 +86,7 @@ cov = (_vh[_w].T / _s[_w] ** 2) @ _vh[_w]  # robust covariance matrix
 stdev = np.sqrt(np.diag(cov))
 
 # Load the mapped pwdlf age-mag resolution
-pwdlf_mapping_bin_optimal = np.insert(
-    np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy"), 0, 0
-)
+pwdlf_mapping_bin_optimal = np.insert(np.load("SFH-WDLF-article/figure_data/pwdlf_bin_optimal_mapping.npy"), 0, 0)
 mag_obs_optimal, resolution_optimal = np.load("SFH-WDLF-article/figure_data/mbol_resolution.npy").T
 mag_obs_optimal_bin_edges = np.append(
     mag_obs_optimal - resolution_optimal * 0.5,
@@ -155,9 +149,7 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     age_temp = 0.0
     age_count = 0
     for i in np.where(pwdlf_mapping_bin_optimal == idx)[0]:
-        pwdlf_temp += spectres(
-            mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0
-        )
+        pwdlf_temp += spectres(mag_obs_optimal, mag_pwdlf, data[i][:, 1], fill=0.0)
         age_temp = age[i]
     partial_wdlf_optimal.append(pwdlf_temp)
     partial_age_optimal.append(age_temp)
@@ -178,12 +170,8 @@ partial_age_optimal_20pc_subset = np.array(partial_age_optimal)[obs_wdlf_optimal
 #
 
 # only compute for the wdlf integrated number density
-recomputed_wdlf_optimal = np.nansum(
-    solution_optimal * np.array(partial_wdlf_optimal).T, axis=1
-)
-recomputed_wdlf_optimal_lsq = np.nansum(
-    solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1
-)
+recomputed_wdlf_optimal = np.nansum(solution_optimal * np.array(partial_wdlf_optimal).T, axis=1)
+recomputed_wdlf_optimal_lsq = np.nansum(solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1)
 recomputed_wdlf_optimal_20pc_subset = np.nansum(
     solution_optimal_20pc_subset * np.array(partial_wdlf_optimal_20pc_subset).T, axis=1
 )
@@ -193,32 +181,24 @@ recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
 
 
 # Cignoni+ 2006 (only relative SFH)
-cignoni_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_cignoni_sfh.csv", delimiter=","
-)
+cignoni_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_cignoni_sfh.csv", delimiter=",")
 cignoni_time = cignoni_data[:, 0]
 cignoni_sfh = cignoni_data[:, 1]
 cignoni_sigma_up = cignoni_data[:, 2] - cignoni_data[:, 1]
 cignoni_sigma_low = cignoni_data[:, 1] - cignoni_data[:, 3]
 # append for plotting the first bin
-cignoni_time = np.insert(
-    cignoni_time, 0, 2.0 * cignoni_time[0] - cignoni_time[1]
-)
+cignoni_time = np.insert(cignoni_time, 0, 2.0 * cignoni_time[0] - cignoni_time[1])
 cignoni_sfh = np.insert(cignoni_sfh, 0, 0.0)
 cignoni_sigma_up = np.insert(cignoni_sigma_up, 0, 0.0)
 cignoni_sigma_low = np.insert(cignoni_sigma_low, 0, 0.0)
 # append for plotting the last bin
-cignoni_time = np.append(
-    cignoni_time, 2.0 * cignoni_time[-1] - cignoni_time[-2]
-)
+cignoni_time = np.append(cignoni_time, 2.0 * cignoni_time[-1] - cignoni_time[-2])
 cignoni_sfh = np.append(cignoni_sfh, 0.0)
 cignoni_sigma_up = np.append(cignoni_sigma_up, 0.0)
 cignoni_sigma_low = np.append(cignoni_sigma_low, 0.0)
 
 # Isern 2019 (In mass per Gyr)
-isern_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_isern_2019_sfh.csv", delimiter=","
-)
+isern_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_isern_2019_sfh.csv", delimiter=",")
 isern_time = isern_data[:, 0]
 isern_sfh = 10.0 ** (isern_data[:, 1])
 isern_sigma_up = 10.0 ** isern_data[:, 2] - 10.0 ** isern_data[:, 1]
@@ -235,9 +215,7 @@ isern_sigma_up = np.append(isern_sigma_up, 0.0)
 isern_sigma_low = np.append(isern_sigma_low, 0.0)
 
 # Mor+ 2019 (only relative SFH, in pc^-2...)
-mor_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_mor_2019_sfh.csv", delimiter=","
-)
+mor_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_mor_2019_sfh.csv", delimiter=",")
 mor_time = mor_data[:, 0]
 mor_sfh = mor_data[:, 1]
 mor_sigma_up = mor_data[:, 2]
@@ -254,32 +232,24 @@ mor_sigma_up = np.append(mor_sigma_up, 0.0)
 mor_sigma_low = np.append(mor_sigma_low, 0.0)
 
 # Tremblay+ 2014 (only relative SFH)
-tremblay_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_tremblay_2014_sfh.csv", delimiter=","
-)
+tremblay_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_tremblay_2014_sfh.csv", delimiter=",")
 tremblay_time = tremblay_data[:, 0]
 tremblay_sfh = tremblay_data[:, 1]
 tremblay_sigma_up = tremblay_data[:, 2]
 tremblay_sigma_low = tremblay_data[:, 3]
 # append for plotting the first bin
-tremblay_time = np.insert(
-    tremblay_time, 0, 2.0 * tremblay_time[0] - tremblay_time[1]
-)
+tremblay_time = np.insert(tremblay_time, 0, 2.0 * tremblay_time[0] - tremblay_time[1])
 tremblay_sfh = np.insert(tremblay_sfh, 0, 0.0)
 tremblay_sigma_up = np.insert(tremblay_sigma_up, 0, 0.0)
 tremblay_sigma_low = np.insert(tremblay_sigma_low, 0, 0.0)
 # append for plotting the last bin
-tremblay_time = np.append(
-    tremblay_time, 2.0 * tremblay_time[-1] - tremblay_time[-2]
-)
+tremblay_time = np.append(tremblay_time, 2.0 * tremblay_time[-1] - tremblay_time[-2])
 tremblay_sfh = np.append(tremblay_sfh, 0.0)
 tremblay_sigma_up = np.append(tremblay_sigma_up, 0.0)
 tremblay_sigma_low = np.append(tremblay_sigma_low, 0.0)
 
 # Reid+ 2007 (only relative SFH)
-reid_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_reid_2007_sfh.csv", delimiter=","
-)
+reid_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_reid_2007_sfh.csv", delimiter=",")
 reid_time = reid_data[:, 0]
 reid_sfh = reid_data[:, 1]
 # append for plotting the first bin
@@ -290,27 +260,19 @@ reid_time = np.append(reid_time, 2.0 * reid_time[-1] - reid_time[-2])
 reid_sfh = np.append(reid_sfh, 0.0)
 
 # Bernard+ 2018
-bernard_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_bernard_2018_sfh.csv", delimiter=","
-)
+bernard_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_bernard_2018_sfh.csv", delimiter=",")
 bernard_time = bernard_data[:, 0]
 bernard_sfh = bernard_data[:, 1]
 # append for plotting the first bin
-bernard_time = np.insert(
-    bernard_time, 0, 2.0 * bernard_time[0] - bernard_time[1]
-)
+bernard_time = np.insert(bernard_time, 0, 2.0 * bernard_time[0] - bernard_time[1])
 bernard_sfh = np.insert(bernard_sfh, 0, 0.0)
 # append for plotting the last bin
-bernard_time = np.append(
-    bernard_time, 2.0 * bernard_time[-1] - bernard_time[-2]
-)
+bernard_time = np.append(bernard_time, 2.0 * bernard_time[-1] - bernard_time[-2])
 bernard_sfh = np.append(bernard_sfh, 0.0)
 
 
 # Torres+ 2021
-torres_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_torres_2021_sfh.csv", delimiter=","
-)
+torres_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_torres_2021_sfh.csv", delimiter=",")
 torres_time = torres_data[:, 0]
 torres_sfh = torres_data[:, 1]
 # append for plotting the first bin
@@ -323,25 +285,46 @@ torres_sfh = np.append(torres_sfh, 0.0)
 # Xiang & Rix 2022
 xiang_data = np.load("41586_2022_4496_MOESM3_ESM.npz")["arr_0"]
 xiang_age = xiang_data[:, 3].astype("float")
-xiang_sfh, xiang_time_bin_edges = np.histogram(
-    xiang_age, bins=75, range=(0, 14)
-)
+xiang_sfh, xiang_time_bin_edges = np.histogram(xiang_age, bins=75, range=(0, 14))
 xiang_time = np.diff(xiang_time_bin_edges) * 0.5 + xiang_time_bin_edges[:-1]
 
 
 # Rowell 2013
-rowell_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_rowell_2013_sfh.txt"
-)
+rowell_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_rowell_2013_sfh.txt")
 rowell_time = rowell_data[:, 0] / 1e9
 rowell_sfh = rowell_data[:, 1] * 1e9
 
 # Rowell 2023
-rowell_2023_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_rowell_2023_sfh.txt"
-)
+rowell_2023_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_rowell_2023_sfh.txt")
 rowell_2023_time = rowell_2023_data[:, 0] / 1e9
 rowell_2023_sfh = rowell_2023_data[:, 2] * 1e9
+
+# Alzate+ 2021
+alzate_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_alzate_fig6d.csv")
+alzate_2021_time = alzate_data[:, 0]
+alzate_2021_sfh = alzate_data[:, 1] + alzate_data[:, 2] + alzate_data[:, 3] + alzate_data[:, 4]
+alzate_2021_time = np.append(alzate_2021_time, 15.0)
+alzate_2021_sfh = np.append(alzate_2021_sfh, 0.0)
+
+# Gallart+ 2024
+gallart_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_gallart.csv", comments="#", delimiter=",")
+gallart_age = gallart_data[:, 0]
+gallart_sfh = gallart_data[:, 1] * 1e4
+
+# Nataf+ 2024
+nataf_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_nataf.csv", comments="#", delimiter=",", dtype=str)
+nataf_mass = np.array(nataf_data[:, 10]).astype("float")
+nataf_age = 10.0**np.array(nataf_data[:, 13]).astype("float") * 1e-9
+
+# Alcazar+ 2025
+alcazar_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_delAlcazarJulia.csv")
+alcazar_2025_age_low = alcazar_data[:, 0]
+alcazar_2025_age_high = alcazar_data[:, 1]
+alcazar_2025_sfh = alcazar_data[:, 2]
+
+alcazar_2025_age_low = np.append(alcazar_2025_age_low, alcazar_2025_age_high[-1])
+alcazar_2025_age_high = np.append(alcazar_2025_age_high, 15.0)
+alcazar_2025_sfh = np.append(alcazar_2025_sfh, 0.0)
 
 """
 # Fantin+ 2019
@@ -385,8 +368,7 @@ plot(age, skewed_gaussian_thin + skewed_gaussian_thick + skewed_gaussian_halo)
 age_bin_norm_this_work = np.concatenate(
     [
         [partial_age_optimal[1] - partial_age_optimal[0]],
-        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:])
-        / 2.0,
+        (np.diff(partial_age_optimal)[:-1] + np.diff(partial_age_optimal)[1:]) / 2.0,
         [partial_age_optimal[-1] - partial_age_optimal[-2]],
     ]
 )
@@ -406,13 +388,9 @@ normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset * reso
 )
 
 # These are to normalise to match the GCNS WDLF integrated number density
-normalisation_cignoni = (
-    np.sum(obs_wdlf_optimal) / (cignoni_sfh @ cignoni_time) / 0.6
-)
+normalisation_cignoni = np.sum(obs_wdlf_optimal) / (cignoni_sfh @ cignoni_time) / 0.6
 normalisation_mor = 1.0
-normalisation_tremblay = np.sum(obs_wdlf_optimal) / np.sum(
-    tremblay_sfh @ tremblay_time
-)
+normalisation_tremblay = np.sum(obs_wdlf_optimal) / np.sum(tremblay_sfh @ tremblay_time)
 normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
 # get the bootstrapped SFH
@@ -437,8 +415,8 @@ wdlf_mean = np.mean(wdlf_list, axis=0)
 wdlf_stdev = np.std(wdlf_list, axis=0)
 
 
-fig6, (ax1, ax2, ax3) = plt.subplots(
-    nrows=3, ncols=1, figsize=(8, 12), height_ratios=(10, 10, 10), sharex=True
+fig6, (ax1, ax2, ax3, ax4) = plt.subplots(
+    nrows=4, ncols=1, figsize=(10, 15), height_ratios=(10, 10, 10, 10), sharex=True
 )
 # ax1 for SFH in the unit of N / Gyr / pc^3
 # ax2 for SFH in the unit of M_sun / Gyr / pc^3
@@ -449,36 +427,33 @@ ax1.step(
     sfh_age,
     solution_optimal_lsq / np.sum(solution_optimal) * normalisation_this_work,
     where="mid",
-    color="black",
-    label="pWDLF (this work)",
+    color="grey",
+    label="pWDLF best-fit (this work)",
 )
-
 ax1.step(
     sfh_age,
     sfh_mean / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
-    color="red",
-    linestyle="dashed",
-    label="bootstrap mean (this work)",
+    color="black",
+    label="pWDLF bootstrap mean (this work)",
 )
 
-ax1.step(
-    rowell_time,
-    rowell_sfh,
-    where="mid",
-    label="Rowell 2013",
-    color="grey",
-)
+
+# ax1.step(
+#    rowell_time,
+#    rowell_sfh,
+#    where="mid",
+#    label="Rowell 2013",
+#    color="grey",
+# )
 
 ax1.step(
     rowell_2023_time,
     rowell_2023_sfh,
     where="mid",
     label="Rowell (this work)",
-    color="purple",
-    linestyle="dashed",
+    color="blue",
 )
-
 
 # Unit of M_sun / Gyr / pc^3
 
@@ -525,80 +500,99 @@ ax2.vlines(
     label="Isern 2019",
 )
 
-
-# Number count
+ax2.plot(
+    gallart_age,
+    gallart_sfh / (4.0 / 3.0 * np.pi * 1e6) / 5.0,
+    color="C3",
+    label=r"Gallart+ 2024 [$\times$0.2]",
+)
 
 # plot Mor+ data
 ax3.step(
     mor_time,
-    mor_sfh / max(mor_sfh),
+    mor_sfh,
     where="mid",
-    color="C3",
+    color="C4",
     label="Mor+ 2019",
-    linestyle="dashed",
 )
 
-# plot Reid+ data
+# plot Alcazar+ 2025 data
 ax3.step(
+    alcazar_2025_age_low,
+    alcazar_2025_sfh,
+    color="C5",
+    where="post",
+    label=r"del Alc$\grave{a}$zar-Juli$\grave{a}$+2025",
+)
+
+
+# Number count
+
+
+# plot Reid+ data
+ax4.step(
     reid_time,
     reid_sfh / np.nanmax(reid_sfh),
     where="mid",
-    color="C4",
     label="Reid+ 2007",
 )
 
-
 # plot Tremblay+ data
-ax3.step(
+ax4.step(
     tremblay_time,
     tremblay_sfh / np.nanmax(tremblay_sfh),
     where="mid",
-    color="C5",
     label="Tremblay+ 2014",
 )
 
-
 # plot Torres+ data (N)
-ax3.step(
+ax4.step(
     torres_time,
     torres_sfh / np.nanmax(torres_sfh),
     where="mid",
-    color="C6",
     label="Torres+ 2021",
 )
 
 
 # plot Xiang+ data (N)
-ax3.step(
+ax4.step(
     xiang_time,
     xiang_sfh / np.nanmax(xiang_sfh),
     where="mid",
-    color="C7",
     label="Xiang+ 2022",
 )
 
+ax4.step(alzate_2021_time, alzate_2021_sfh / np.max(alzate_2021_sfh), where="mid", label="Alzate+ 2021")
+
+h, b = np.histogram(nataf_age, bins=75, range=(0, 15))
+ax4.step(b[:-1], h/max(h), where="post", label="Nataf+ 2024")
 
 ax1.grid()
 ax2.grid()
 ax3.grid()
+ax4.grid()
 
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 
 ax1.set_ylim(0, 0.0055)
-ax2.set_ylim(0, 0.00525)
-ax3.set_ylim(0, 1.55)
+ax2.set_ylim(0, 0.0055)
+ax3.set_ylim(0, 15.0)
+ax4.set_ylim(0, 1.25)
 
-ax3.set_xlabel("Lookback time [Gyr]")
+
+ax4.set_xlabel("Lookback time [Gyr]")
 
 ax1.set_ylabel(r"Star Formation Rate [N Gyr$^{-1}$ pc$^{-3}$]")
 ax2.set_ylabel(r"Star Formation Rate [M$_{\odot}$ Gyr$^{-1}$ pc$^{-3}$]")
-ax3.set_ylabel(r"Star Formation Rate [N / arbitrary unit]")
+ax3.set_ylabel(r"Star Formation Rate [M$_{\odot}$ Gyr$^{-1}$ pc$^{-2}$]")
+ax4.set_ylabel(r"Star Formation Rate [N (renormalised)]")
 
 
 ax1.legend(loc="upper right")
 ax2.legend(loc="upper right")
 ax3.legend(loc="upper right")
+ax4.legend(loc="upper right", ncol=3)
 
 plt.tight_layout()
 plt.subplots_adjust(hspace=0)
