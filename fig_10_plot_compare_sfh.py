@@ -181,7 +181,7 @@ recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
 
 
 # Cignoni+ 2006 (only relative SFH)
-cignoni_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_cignoni_sfh.csv", delimiter=",")
+cignoni_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_cignoni_sfh.csv", delimiter=",")
 cignoni_time = cignoni_data[:, 0]
 cignoni_sfh = cignoni_data[:, 1]
 cignoni_sigma_up = cignoni_data[:, 2] - cignoni_data[:, 1]
@@ -198,7 +198,7 @@ cignoni_sigma_up = np.append(cignoni_sigma_up, 0.0)
 cignoni_sigma_low = np.append(cignoni_sigma_low, 0.0)
 
 # Isern 2019 (In mass per Gyr)
-isern_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_isern_2019_sfh.csv", delimiter=",")
+isern_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_isern_2019_sfh.csv", delimiter=",")
 isern_time = isern_data[:, 0]
 isern_sfh = 10.0 ** (isern_data[:, 1])
 isern_sigma_up = 10.0 ** isern_data[:, 2] - 10.0 ** isern_data[:, 1]
@@ -215,7 +215,7 @@ isern_sigma_up = np.append(isern_sigma_up, 0.0)
 isern_sigma_low = np.append(isern_sigma_low, 0.0)
 
 # Mor+ 2019 (only relative SFH, in pc^-2...)
-mor_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_mor_2019_sfh.csv", delimiter=",")
+mor_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_mor_2019_sfh.csv", delimiter=",")
 mor_time = mor_data[:, 0]
 mor_sfh = mor_data[:, 1]
 mor_sigma_up = mor_data[:, 2]
@@ -232,7 +232,7 @@ mor_sigma_up = np.append(mor_sigma_up, 0.0)
 mor_sigma_low = np.append(mor_sigma_low, 0.0)
 
 # Tremblay+ 2014 (only relative SFH)
-tremblay_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_tremblay_2014_sfh.csv", delimiter=",")
+tremblay_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_tremblay_2014_sfh.csv", delimiter=",")
 tremblay_time = tremblay_data[:, 0]
 tremblay_sfh = tremblay_data[:, 1]
 tremblay_sigma_up = tremblay_data[:, 2]
@@ -249,7 +249,7 @@ tremblay_sigma_up = np.append(tremblay_sigma_up, 0.0)
 tremblay_sigma_low = np.append(tremblay_sigma_low, 0.0)
 
 # Reid+ 2007 (only relative SFH)
-reid_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_reid_2007_sfh.csv", delimiter=",")
+reid_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_reid_2007_sfh.csv", delimiter=",")
 reid_time = reid_data[:, 0]
 reid_sfh = reid_data[:, 1]
 # append for plotting the first bin
@@ -260,7 +260,7 @@ reid_time = np.append(reid_time, 2.0 * reid_time[-1] - reid_time[-2])
 reid_sfh = np.append(reid_sfh, 0.0)
 
 # Bernard+ 2018
-bernard_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_bernard_2018_sfh.csv", delimiter=",")
+bernard_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_bernard_2018_sfh.csv", delimiter=",")
 bernard_time = bernard_data[:, 0]
 bernard_sfh = bernard_data[:, 1]
 # append for plotting the first bin
@@ -272,7 +272,7 @@ bernard_sfh = np.append(bernard_sfh, 0.0)
 
 
 # Torres+ 2021
-torres_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_torres_2021_sfh.csv", delimiter=",")
+torres_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_torres_2021_sfh.csv", delimiter=",")
 torres_time = torres_data[:, 0]
 torres_sfh = torres_data[:, 1]
 # append for plotting the first bin
@@ -290,34 +290,38 @@ xiang_time = np.diff(xiang_time_bin_edges) * 0.5 + xiang_time_bin_edges[:-1]
 
 
 # Rowell 2013
-rowell_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_rowell_2013_sfh.txt")
+rowell_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_rowell_2013_sfh.txt")
 rowell_time = rowell_data[:, 0] / 1e9
 rowell_sfh = rowell_data[:, 1] * 1e9
 
-# Rowell 2023
-rowell_2023_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_11_rowell_2023_sfh.txt")
-rowell_2023_time = rowell_2023_data[:, 0] / 1e9
-rowell_2023_sfh = rowell_2023_data[:, 2] * 1e9
+# Rowell 2025
+rowell_2025_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_rowell_2025_sfh.txt")
+rowell_2025_time = rowell_2025_data[:, 0] / 1e9
+rowell_2025_sfh = rowell_2025_data[:, 2] * 1e9
+
+rowell_2025_bootstrap_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_nr_sfh/MonteCarlo_sfhPlotData.txt")
+rowell_2025_bootstrap_time = rowell_2025_bootstrap_data[:, 0] / 1e9
+rowell_2025_bootstrap_sfh = rowell_2025_bootstrap_data[:, 2] * 1e9
 
 # Alzate+ 2021
-alzate_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_alzate_fig6d.csv")
+alzate_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_10_alzate_fig6d.csv")
 alzate_2021_time = alzate_data[:, 0]
 alzate_2021_sfh = alzate_data[:, 1] + alzate_data[:, 2] + alzate_data[:, 3] + alzate_data[:, 4]
 alzate_2021_time = np.append(alzate_2021_time, 15.0)
 alzate_2021_sfh = np.append(alzate_2021_sfh, 0.0)
 
 # Gallart+ 2024
-gallart_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_gallart.csv", comments="#", delimiter=",")
+gallart_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_10_gallart.csv", comments="#", delimiter=",")
 gallart_age = gallart_data[:, 0]
 gallart_sfh = gallart_data[:, 1] * 1e4
 
 # Nataf+ 2024
-nataf_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_nataf.csv", comments="#", delimiter=",", dtype=str)
+nataf_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_10_nataf.csv", comments="#", delimiter=",", dtype=str)
 nataf_mass = np.array(nataf_data[:, 10]).astype("float")
 nataf_age = 10.0**np.array(nataf_data[:, 13]).astype("float") * 1e-9
 
 # Alcazar+ 2025
-alcazar_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_11_delAlcazarJulia.csv")
+alcazar_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_10_delAlcazarJulia.csv")
 alcazar_2025_age_low = alcazar_data[:, 0]
 alcazar_2025_age_high = alcazar_data[:, 1]
 alcazar_2025_sfh = alcazar_data[:, 2]
@@ -329,7 +333,7 @@ alcazar_2025_sfh = np.append(alcazar_2025_sfh, 0.0)
 """
 # Fantin+ 2019
 fantin_data = np.loadtxt(
-    r"SFH-WDLF-article/figure_data/fig_11_fantin_2019_sfh.csv", delimiter=","
+    r"SFH-WDLF-article/figure_data/fig_10_fantin_2019_sfh.csv", delimiter=","
 )
 fantin_thin = fantin_data[0]
 fantin_thick = fantin_data[1]
@@ -428,14 +432,14 @@ ax1.step(
     solution_optimal_lsq / np.sum(solution_optimal) * normalisation_this_work,
     where="mid",
     color="grey",
-    label="pWDLF best-fit (this work)",
+    label="pWDLF best-fit",
 )
 ax1.step(
     sfh_age,
     sfh_mean / np.nansum(solution_optimal) * normalisation_this_work,
     where="mid",
     color="black",
-    label="pWDLF bootstrap mean (this work)",
+    label="pWDLF bootstrap mean",
 )
 
 
@@ -448,10 +452,18 @@ ax1.step(
 # )
 
 ax1.step(
-    rowell_2023_time,
-    rowell_2023_sfh,
+    rowell_2025_time,
+    rowell_2025_sfh,
     where="mid",
-    label="Rowell (this work)",
+    label="WDLF Inversion best-fit",
+    color="blue",
+    alpha=0.3,
+)
+ax1.step(
+    rowell_2025_bootstrap_time,
+    rowell_2025_bootstrap_sfh,
+    where="mid",
+    label="WDLF Inversion bootstrap mean",
     color="blue",
 )
 
@@ -537,14 +549,6 @@ ax4.step(
     label="Reid+ 2007",
 )
 
-# plot Tremblay+ data
-ax4.step(
-    tremblay_time,
-    tremblay_sfh / np.nanmax(tremblay_sfh),
-    where="mid",
-    label="Tremblay+ 2014",
-)
-
 # plot Torres+ data (N)
 ax4.step(
     torres_time,
@@ -553,6 +557,8 @@ ax4.step(
     label="Torres+ 2021",
 )
 
+# plot alzate+ data (N)
+ax4.step(alzate_2021_time, alzate_2021_sfh / np.max(alzate_2021_sfh), where="mid", label="Alzate+ 2021")
 
 # plot Xiang+ data (N)
 ax4.step(
@@ -561,8 +567,6 @@ ax4.step(
     where="mid",
     label="Xiang+ 2022",
 )
-
-ax4.step(alzate_2021_time, alzate_2021_sfh / np.max(alzate_2021_sfh), where="mid", label="Alzate+ 2021")
 
 h, b = np.histogram(nataf_age, bins=75, range=(0, 15))
 ax4.step(b[:-1], h/max(h), where="post", label="Nataf+ 2024")
