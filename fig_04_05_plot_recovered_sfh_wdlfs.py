@@ -349,7 +349,7 @@ ax2.set_xticks(np.arange(0, 15, 2))
 ax2.set_xlim(0, 14)
 ax2.set_ylim(bottom=0)
 ax2.set_xlabel("Lookback time [Gyr]")
-ax2.set_ylabel("log(number density) [N pc$^{-3}$ mag$^{-1}$]")
+ax2.set_ylabel("log(number density) [N pc$^{-3}$ Gyr$^{-1}$]")
 ax2.legend()
 
 # add back the zeros for plotting
