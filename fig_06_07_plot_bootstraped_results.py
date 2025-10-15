@@ -342,7 +342,7 @@ for i, a in enumerate([0.40, 1.21, 1.80, 2.25, 3.67, 8.70]):
     ax[i].set_xlabel(f"Δ = SFH({a} Gyr) - SFH(neighbors)")
     ax[i].set_ylabel("Occurances")
     ax[i].set_title(f"Peak around {a:.2f} Gyr")
-    ax[i].text(0.01, 5, f"{np.mean(diff > 0)*100:.3f}%", color="C0")
+    ax[i].text(0.0095, 5, f"{np.mean(diff > 0)*100:.3f}%", color="C0")
 
 for i, a in enumerate([0.47, 1.32, 1.70, 2.25, 3.60, 8.37]):
     # Use 1 bin insteadOccurance
@@ -355,7 +355,7 @@ for i, a in enumerate([0.47, 1.32, 1.70, 2.25, 3.60, 8.37]):
     diff_single = peak_count_single - neighbour_count_single
     print(f"Fraction of bootstraps with SFH({a} Gyr) > SFH(neighbors): {np.sum(diff_single > 0):.1f}")
     ax[i].hist(diff_single, bins=50, color="C1", alpha=0.3, label="1 bin")
-    ax[i].text(0.01, 15, f"{np.mean(diff_single > 0)*100:.3f}%", color="C1")
+    ax[i].text(0.0095, 15, f"{np.mean(diff_single > 0)*100:.3f}%", color="C1")
 
 
 ax[1].legend()

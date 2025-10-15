@@ -2,7 +2,26 @@ import os
 
 from matplotlib import pyplot as plt
 import numpy as np
+from scipy.integrate import quad
 from spectresc import spectres
+
+
+def imf_func(m):
+    m = np.ravel(m).astype(float)
+    mf = m**-2.3
+    mask = m < 1.0
+    if mask.any():
+        # 0.158 / (ln(10) * mass_ms) = 0.06861852814 / mass_ms
+        # log(0.079) = -1.1023729087095586
+        # 2 * 0.69**2. = 0.9522
+        # Normalisation factor (at mass_ms=1) is 0.01915058
+        norm = 0.01915058
+        factor = 0.06861852814
+        logconst = 1.1023729087095586
+        sigma_sq = 0.9522
+        mf[mask] = (factor / m[mask]) * np.exp(-((np.log10(m[mask]) + logconst) ** 2) / sigma_sq) / norm
+    return mf
+
 
 plt.rcParams.update({"font.size": 12})
 
@@ -11,7 +30,6 @@ boostrap_folder = "SFH-WDLF-article/bootstrap_sample_folder"
 
 # Load the GCNS data
 gcns_wdlf = np.load("pubgcnswdlf-h366pc-dpdf-samples-hp5-maglim80-vgen-grp-rdc-srt.npz")["data"]
-gcns_wdlf_20pc_subset = gcns_wdlf[gcns_wdlf["dpc"] <= 20.0]
 
 # Load the pwdlfs
 data = []
@@ -56,28 +74,14 @@ mag_pwdlf = data[0][:, 0]
     solution_lower,
     solution_upper,
 ) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal.npy").T
-(
-    partial_age_optimal,
-    partial_age_duration,
-    solution_optimal_20pc_subset,
-    solution_lower_20pc_subset,
-    solution_upper_20pc_subset,
-) = np.load("SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_bin_optimal_20pc_subset.npy").T
 
 # The lsq solution
 lsq_res = np.load(
     "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution.npy",
     allow_pickle=True,
 ).item()
-lsq_res_20pc_subset = np.load(
-    "SFH-WDLF-article/figure_data/gcns_sfh_optimal_resolution_lsq_solution_20pc_subset.npy",
-    allow_pickle=True,
-).item()
 solution_optimal_lsq = lsq_res.x
 solution_optimal_jac = lsq_res.jac
-
-solution_optimal_lsq_20pc_subset = lsq_res_20pc_subset.x
-solution_optimal_jac_20pc_subset = lsq_res_20pc_subset.jac
 
 _, _s, _vh = np.linalg.svd(solution_optimal_jac, full_matrices=False)
 tol = np.finfo(float).eps * _s[0] * max(solution_optimal_jac.shape)
@@ -91,13 +95,6 @@ mag_obs_optimal, resolution_optimal = np.load("SFH-WDLF-article/figure_data/mbol
 mag_obs_optimal_bin_edges = np.append(
     mag_obs_optimal - resolution_optimal * 0.5,
     mag_obs_optimal[-1] + resolution_optimal[-1] * 0.5,
-)
-
-h_gen_optimal_20pc_subset, b_optimal_20pc_subset = np.histogram(
-    gcns_wdlf_20pc_subset["Mbol"],
-    bins=mag_obs_optimal_bin_edges,
-    range=(2.25, 18.25),
-    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"],
 )
 
 mag_obs_optimal_bin_edges = np.append(
@@ -119,26 +116,8 @@ e_gen_optimal, _ = np.histogram(
     weights=0.01 / gcns_wdlf["Vgen"] ** 2.0,
 )
 
-# 20pc sample
-h_gen_optimal_20pc_subset, b_optimal_20pc_subset = np.histogram(
-    gcns_wdlf_20pc_subset["Mbol"],
-    bins=mag_obs_optimal_bin_edges,
-    range=(2.25, 18.25),
-    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"],
-)
-
-e_gen_optimal_20pc_subset, _ = np.histogram(
-    gcns_wdlf_20pc_subset["Mbol"],
-    bins=mag_obs_optimal_bin_edges,
-    range=(2.25, 18.25),
-    weights=0.01 / gcns_wdlf_20pc_subset["Vgen"] ** 2.0,
-)
-
 obs_wdlf_optimal = h_gen_optimal / resolution_optimal
 obs_wdlf_err_optimal = e_gen_optimal**0.5 / resolution_optimal
-
-obs_wdlf_optimal_20pc_subset = h_gen_optimal_20pc_subset / resolution_optimal
-obs_wdlf_err_optimal_20pc_subset = e_gen_optimal_20pc_subset**0.5 / resolution_optimal
 
 # Stack up the pwdlfs to the desired resolution
 partial_wdlf_optimal = []
@@ -155,29 +134,13 @@ for idx in np.sort(list(set(pwdlf_mapping_bin_optimal))):
     partial_age_optimal.append(age_temp)
 
 
-partial_wdlf_optimal_20pc_subset = np.vstack(partial_wdlf_optimal)
 partial_wdlf_optimal = np.vstack(partial_wdlf_optimal)
 partial_wdlf_optimal /= np.nansum(partial_wdlf_optimal)
-partial_wdlf_optimal_20pc_subset /= np.nansum(partial_wdlf_optimal_20pc_subset)
 partial_wdlf_optimal = partial_wdlf_optimal[obs_wdlf_optimal > 0.0][:, obs_wdlf_optimal > 0.0]
-partial_wdlf_optimal_20pc_subset = partial_wdlf_optimal_20pc_subset[obs_wdlf_optimal_20pc_subset > 0.0][
-    :, obs_wdlf_optimal_20pc_subset > 0.0
-]
-partial_wdlf_optimal_20pc_subset = np.array(partial_wdlf_optimal)[obs_wdlf_optimal_20pc_subset > 0.0][
-    :, obs_wdlf_optimal_20pc_subset > 0.0
-]
-partial_age_optimal_20pc_subset = np.array(partial_age_optimal)[obs_wdlf_optimal_20pc_subset > 0.0]
-#
 
 # only compute for the wdlf integrated number density
 recomputed_wdlf_optimal = np.nansum(solution_optimal * np.array(partial_wdlf_optimal).T, axis=1)
 recomputed_wdlf_optimal_lsq = np.nansum(solution_optimal_lsq * np.array(partial_wdlf_optimal).T, axis=1)
-recomputed_wdlf_optimal_20pc_subset = np.nansum(
-    solution_optimal_20pc_subset * np.array(partial_wdlf_optimal_20pc_subset).T, axis=1
-)
-recomputed_wdlf_optimal_lsq_20pc_subset = np.nansum(
-    solution_optimal_lsq_20pc_subset * np.array(partial_wdlf_optimal_20pc_subset).T, axis=1
-)
 
 
 # Cignoni+ 2006 (only relative SFH)
@@ -306,8 +269,8 @@ gallart_sfh = gallart_data[:, 1] * 1e4
 
 # Nataf+ 2024
 nataf_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_10_nataf.csv", comments="#", delimiter=",", dtype=str)
-nataf_mass = np.array(nataf_data[:, 10]).astype("float")
-nataf_age = 10.0**np.array(nataf_data[:, 13]).astype("float") * 1e-9
+nataf_mass = np.array(nataf_data[:, 0]).astype("float")
+nataf_age = 10.0**np.array(nataf_data[:, 1]).astype("float") * 1e-9
 
 # Alcazar+ 2025
 alcazar_data = np.loadtxt("SFH-WDLF-article/figure_data/fig_10_delAlcazarJulia.csv")
@@ -375,9 +338,10 @@ mag_bin_norm_this_work = np.concatenate(
     ]
 )
 
-normalisation_this_work = np.sum(obs_wdlf_optimal * resolution_optimal) / np.sum(recomputed_wdlf_optimal_lsq)
-normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset * resolution_optimal) / np.sum(
-    recomputed_wdlf_optimal_lsq_20pc_subset
+
+imf_normalisation = quad(imf_func, 0.6, 7.0)[0]
+normalisation_this_work = (
+    np.sum(obs_wdlf_optimal * resolution_optimal) / np.sum(recomputed_wdlf_optimal_lsq) / imf_normalisation
 )
 
 # These are to normalise to match the GCNS WDLF integrated number density
@@ -389,8 +353,6 @@ normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
 sfh_list = []
 wdlf_list = []
-sfh_20pc_list = []
-wdlf_20pc_list = []
 
 for i in range(1000):
     sfh = np.genfromtxt(f"{boostrap_folder}/sample_{i}/gcns_sfh_sample_{i}.csv").T[1]
@@ -578,7 +540,7 @@ ax4.grid()
 ax1.set_xticks(np.arange(0, 15, 2))
 ax1.set_xlim(0, 14)
 
-ax1.set_ylim(0, 0.0055)
+ax1.set_ylim(0, 0.0045)
 ax2.set_ylim(0, 0.0055)
 ax3.set_ylim(0, 15.0)
 ax4.set_ylim(0, 1.25)
