@@ -198,7 +198,7 @@ solution_upper = np.append(solution_upper, 0.0)
 solution_lower = np.append(solution_lower, 0.0)
 
 
-imf_normalisation = quad(imf_func, 0.9, 8.0)[0]
+imf_normalisation = quad(imf_func, 0.6, 8.0)[0]
 normalisation_this_work = (
     np.sum(obs_wdlf_optimal * resolution_optimal) / np.sum(recomputed_wdlf_optimal_lsq) / imf_normalisation
 )

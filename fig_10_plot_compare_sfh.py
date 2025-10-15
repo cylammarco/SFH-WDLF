@@ -339,7 +339,7 @@ mag_bin_norm_this_work = np.concatenate(
 )
 
 
-imf_normalisation = quad(imf_func, 0.6, 7.0)[0]
+imf_normalisation = quad(imf_func, 0.6, 8.0)[0]
 normalisation_this_work = (
     np.sum(obs_wdlf_optimal * resolution_optimal) / np.sum(recomputed_wdlf_optimal_lsq) / imf_normalisation
 )
