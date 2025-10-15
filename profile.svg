@@ -1,0 +1,491 @@
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" width="1200" height="266" onload="init(evt)" viewBox="0 0 1200 266" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fg="http://github.com/jonhoo/inferno"><!--Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples.--><!--NOTES: --><defs><linearGradient id="background" y1="0" y2="1" x1="0" x2="0"><stop stop-color="#eeeeee" offset="5%"/><stop stop-color="#eeeeb0" offset="95%"/></linearGradient></defs><style type="text/css">
+text { font-family:monospace; font-size:12px }
+#title { text-anchor:middle; font-size:17px; }
+#matched { text-anchor:end; }
+#search { text-anchor:end; opacity:0.1; cursor:pointer; }
+#search:hover, #search.show { opacity:1; }
+#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+#unzoom { cursor:pointer; }
+#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+.hide { display:none; }
+.parent { opacity:0.5; }
+</style><script type="text/ecmascript"><![CDATA[
+        var nametype = 'Function:';
+        var fontsize = 12;
+        var fontwidth = 0.59;
+        var xpad = 10;
+        var inverted = true;
+        var searchcolor = 'rgb(230,0,230)';
+        var fluiddrawing = true;
+        var truncate_text_right = false;
+    ]]><![CDATA["use strict";
+var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames, known_font_width;
+function init(evt) {
+    details = document.getElementById("details").firstChild;
+    searchbtn = document.getElementById("search");
+    unzoombtn = document.getElementById("unzoom");
+    matchedtxt = document.getElementById("matched");
+    svg = document.getElementsByTagName("svg")[0];
+    frames = document.getElementById("frames");
+    known_font_width = get_monospace_width(frames);
+    total_samples = parseInt(frames.attributes.total_samples.value);
+    searching = 0;
+
+    // Use GET parameters to restore a flamegraph's state.
+    var restore_state = function() {
+        var params = get_params();
+        if (params.x && params.y)
+            zoom(find_group(document.querySelector('[*|x="' + params.x + '"][y="' + params.y + '"]')));
+        if (params.s)
+            search(params.s);
+    };
+
+    if (fluiddrawing) {
+        // Make width dynamic so the SVG fits its parent's width.
+        svg.removeAttribute("width");
+        // Edge requires us to have a viewBox that gets updated with size changes.
+        var isEdge = /Edge\/\d./i.test(navigator.userAgent);
+        if (!isEdge) {
+            svg.removeAttribute("viewBox");
+        }
+        var update_for_width_change = function() {
+            if (isEdge) {
+                svg.attributes.viewBox.value = "0 0 " + svg.width.baseVal.value + " " + svg.height.baseVal.value;
+            }
+
+            // Keep consistent padding on left and right of frames container.
+            frames.attributes.width.value = svg.width.baseVal.value - xpad * 2;
+
+            // Text truncation needs to be adjusted for the current width.
+            update_text_for_elements(frames.children);
+
+            // Keep search elements at a fixed distance from right edge.
+            var svgWidth = svg.width.baseVal.value;
+            searchbtn.attributes.x.value = svgWidth - xpad;
+            matchedtxt.attributes.x.value = svgWidth - xpad;
+        };
+        window.addEventListener('resize', function() {
+            update_for_width_change();
+        });
+        // This needs to be done asynchronously for Safari to work.
+        setTimeout(function() {
+            unzoom();
+            update_for_width_change();
+            restore_state();
+        }, 0);
+    } else {
+        restore_state();
+    }
+}
+// event listeners
+window.addEventListener("click", function(e) {
+    var target = find_group(e.target);
+    if (target) {
+        if (target.nodeName == "a") {
+            if (e.ctrlKey === false) return;
+            e.preventDefault();
+        }
+        if (target.classList.contains("parent")) unzoom();
+        zoom(target);
+
+        // set parameters for zoom state
+        var el = target.querySelector("rect");
+        if (el && el.attributes && el.attributes.y && el.attributes["fg:x"]) {
+            var params = get_params()
+            params.x = el.attributes["fg:x"].value;
+            params.y = el.attributes.y.value;
+            history.replaceState(null, null, parse_params(params));
+        }
+    }
+    else if (e.target.id == "unzoom") {
+        unzoom();
+
+        // remove zoom state
+        var params = get_params();
+        if (params.x) delete params.x;
+        if (params.y) delete params.y;
+        history.replaceState(null, null, parse_params(params));
+    }
+    else if (e.target.id == "search") search_prompt();
+}, false)
+// mouse-over for info
+// show
+window.addEventListener("mouseover", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = nametype + " " + g_to_text(target);
+}, false)
+// clear
+window.addEventListener("mouseout", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = ' ';
+}, false)
+// ctrl-F for search
+window.addEventListener("keydown",function (e) {
+    if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+        e.preventDefault();
+        search_prompt();
+    }
+}, false)
+// functions
+function get_params() {
+    var params = {};
+    var paramsarr = window.location.search.substr(1).split('&');
+    for (var i = 0; i < paramsarr.length; ++i) {
+        var tmp = paramsarr[i].split("=");
+        if (!tmp[0] || !tmp[1]) continue;
+        params[tmp[0]]  = decodeURIComponent(tmp[1]);
+    }
+    return params;
+}
+function parse_params(params) {
+    var uri = "?";
+    for (var key in params) {
+        uri += key + '=' + encodeURIComponent(params[key]) + '&';
+    }
+    if (uri.slice(-1) == "&")
+        uri = uri.substring(0, uri.length - 1);
+    if (uri == '?')
+        uri = window.location.href.split('?')[0];
+    return uri;
+}
+function find_child(node, selector) {
+    var children = node.querySelectorAll(selector);
+    if (children.length) return children[0];
+    return;
+}
+function find_group(node) {
+    var parent = node.parentElement;
+    if (!parent) return;
+    if (parent.id == "frames") return node;
+    return find_group(parent);
+}
+function orig_save(e, attr, val) {
+    if (e.attributes["fg:orig_" + attr] != undefined) return;
+    if (e.attributes[attr] == undefined) return;
+    if (val == undefined) val = e.attributes[attr].value;
+    e.setAttribute("fg:orig_" + attr, val);
+}
+function orig_load(e, attr) {
+    if (e.attributes["fg:orig_"+attr] == undefined) return;
+    e.attributes[attr].value = e.attributes["fg:orig_" + attr].value;
+    e.removeAttribute("fg:orig_" + attr);
+}
+function g_to_text(e) {
+    var text = find_child(e, "title").firstChild.nodeValue;
+    return (text)
+}
+function g_to_func(e) {
+    var func = g_to_text(e);
+    // if there's any manipulation we want to do to the function
+    // name before it's searched, do it here before returning.
+    return (func);
+}
+function get_monospace_width(frames) {
+    // Given the id="frames" element, return the width of text characters if
+    // this is a monospace font, otherwise return 0.
+    text = find_child(frames.children[0], "text");
+    originalContent = text.textContent;
+    text.textContent = "!";
+    bangWidth = text.getComputedTextLength();
+    text.textContent = "W";
+    wWidth = text.getComputedTextLength();
+    text.textContent = originalContent;
+    if (bangWidth === wWidth) {
+        return bangWidth;
+    } else {
+        return 0;
+    }
+}
+function update_text_for_elements(elements) {
+    // In order to render quickly in the browser, you want to do one pass of
+    // reading attributes, and one pass of mutating attributes. See
+    // https://web.dev/avoid-large-complex-layouts-and-layout-thrashing/ for details.
+
+    // Fall back to inefficient calculation, if we're variable-width font.
+    // TODO This should be optimized somehow too.
+    if (known_font_width === 0) {
+        for (var i = 0; i < elements.length; i++) {
+            update_text(elements[i]);
+        }
+        return;
+    }
+
+    var textElemNewAttributes = [];
+    for (var i = 0; i < elements.length; i++) {
+        var e = elements[i];
+        var r = find_child(e, "rect");
+        var t = find_child(e, "text");
+        var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+        var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+        var newX = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+
+        // Smaller than this size won't fit anything
+        if (w < 2 * known_font_width) {
+            textElemNewAttributes.push([newX, ""]);
+            continue;
+        }
+
+        // Fit in full text width
+        if (txt.length * known_font_width < w) {
+            textElemNewAttributes.push([newX, txt]);
+            continue;
+        }
+
+        var substringLength = Math.floor(w / known_font_width) - 2;
+        if (truncate_text_right) {
+            // Truncate the right side of the text.
+            textElemNewAttributes.push([newX, txt.substring(0, substringLength) + ".."]);
+            continue;
+        } else {
+            // Truncate the left side of the text.
+            textElemNewAttributes.push([newX, ".." + txt.substring(txt.length - substringLength, txt.length)]);
+            continue;
+        }
+    }
+
+    console.assert(textElemNewAttributes.length === elements.length, "Resize failed, please file a bug at https://github.com/jonhoo/inferno/");
+
+    // Now that we know new textContent, set it all in one go so we don't refresh a bazillion times.
+    for (var i = 0; i < elements.length; i++) {
+        var e = elements[i];
+        var values = textElemNewAttributes[i];
+        var t = find_child(e, "text");
+        t.attributes.x.value = values[0];
+        t.textContent = values[1];
+    }
+}
+
+function update_text(e) {
+    var r = find_child(e, "rect");
+    var t = find_child(e, "text");
+    var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+    var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+    t.attributes.x.value = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+
+    // Smaller than this size won't fit anything
+    if (w < 2 * fontsize * fontwidth) {
+        t.textContent = "";
+        return;
+    }
+    t.textContent = txt;
+    // Fit in full text width
+    if (t.getComputedTextLength() < w)
+        return;
+    if (truncate_text_right) {
+        // Truncate the right side of the text.
+        for (var x = txt.length - 2; x > 0; x--) {
+            if (t.getSubStringLength(0, x + 2) <= w) {
+                t.textContent = txt.substring(0, x) + "..";
+                return;
+            }
+        }
+    } else {
+        // Truncate the left side of the text.
+        for (var x = 2; x < txt.length; x++) {
+            if (t.getSubStringLength(x - 2, txt.length) <= w) {
+                t.textContent = ".." + txt.substring(x, txt.length);
+                return;
+            }
+        }
+    }
+    t.textContent = "";
+}
+// zoom
+function zoom_reset(e) {
+    if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * parseInt(e.attributes["fg:x"].value) / total_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / total_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_reset(c[i]);
+    }
+}
+function zoom_child(e, x, zoomed_width_samples) {
+    if (e.tagName == "text") {
+        var parent_x = parseFloat(find_child(e.parentNode, "rect[x]").attributes.x.value);
+        e.attributes.x.value = format_percent(parent_x + (100 * 3 / frames.attributes.width.value));
+    } else if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * (parseInt(e.attributes["fg:x"].value) - x) / zoomed_width_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / zoomed_width_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_child(c[i], x, zoomed_width_samples);
+    }
+}
+function zoom_parent(e) {
+    if (e.attributes) {
+        if (e.attributes.x != undefined) {
+            e.attributes.x.value = "0.0%";
+        }
+        if (e.attributes.width != undefined) {
+            e.attributes.width.value = "100.0%";
+        }
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_parent(c[i]);
+    }
+}
+function zoom(node) {
+    var attr = find_child(node, "rect").attributes;
+    var width = parseInt(attr["fg:w"].value);
+    var xmin = parseInt(attr["fg:x"].value);
+    var xmax = xmin + width;
+    var ymin = parseFloat(attr.y.value);
+    unzoombtn.classList.remove("hide");
+    var el = frames.children;
+    var to_update_text = [];
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        var a = find_child(e, "rect").attributes;
+        var ex = parseInt(a["fg:x"].value);
+        var ew = parseInt(a["fg:w"].value);
+        // Is it an ancestor
+        if (!inverted) {
+            var upstack = parseFloat(a.y.value) > ymin;
+        } else {
+            var upstack = parseFloat(a.y.value) < ymin;
+        }
+        if (upstack) {
+            // Direct ancestor
+            if (ex <= xmin && (ex+ew) >= xmax) {
+                e.classList.add("parent");
+                zoom_parent(e);
+                to_update_text.push(e);
+            }
+            // not in current path
+            else
+                e.classList.add("hide");
+        }
+        // Children maybe
+        else {
+            // no common path
+            if (ex < xmin || ex >= xmax) {
+                e.classList.add("hide");
+            }
+            else {
+                zoom_child(e, xmin, width);
+                to_update_text.push(e);
+            }
+        }
+    }
+    update_text_for_elements(to_update_text);
+}
+function unzoom() {
+    unzoombtn.classList.add("hide");
+    var el = frames.children;
+    for(var i = 0; i < el.length; i++) {
+        el[i].classList.remove("parent");
+        el[i].classList.remove("hide");
+        zoom_reset(el[i]);
+    }
+    update_text_for_elements(el);
+}
+// search
+function reset_search() {
+    var el = document.querySelectorAll("#frames rect");
+    for (var i = 0; i < el.length; i++) {
+        orig_load(el[i], "fill")
+    }
+    var params = get_params();
+    delete params.s;
+    history.replaceState(null, null, parse_params(params));
+}
+function search_prompt() {
+    if (!searching) {
+        var term = prompt("Enter a search term (regexp " +
+            "allowed, eg: ^ext4_)", "");
+        if (term != null) {
+            search(term)
+        }
+    } else {
+        reset_search();
+        searching = 0;
+        searchbtn.classList.remove("show");
+        searchbtn.firstChild.nodeValue = "Search"
+        matchedtxt.classList.add("hide");
+        matchedtxt.firstChild.nodeValue = ""
+    }
+}
+function search(term) {
+    var re = new RegExp(term);
+    var el = frames.children;
+    var matches = new Object();
+    var maxwidth = 0;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        // Skip over frames which are either not visible, or below the zoomed-to frame
+        if (e.classList.contains("hide") || e.classList.contains("parent")) {
+            continue;
+        }
+        var func = g_to_func(e);
+        var rect = find_child(e, "rect");
+        if (func == null || rect == null)
+            continue;
+        // Save max width. Only works as we have a root frame
+        var w = parseInt(rect.attributes["fg:w"].value);
+        if (w > maxwidth)
+            maxwidth = w;
+        if (func.match(re)) {
+            // highlight
+            var x = parseInt(rect.attributes["fg:x"].value);
+            orig_save(rect, "fill");
+            rect.attributes.fill.value = searchcolor;
+            // remember matches
+            if (matches[x] == undefined) {
+                matches[x] = w;
+            } else {
+                if (w > matches[x]) {
+                    // overwrite with parent
+                    matches[x] = w;
+                }
+            }
+            searching = 1;
+        }
+    }
+    if (!searching)
+        return;
+    var params = get_params();
+    params.s = term;
+    history.replaceState(null, null, parse_params(params));
+
+    searchbtn.classList.add("show");
+    searchbtn.firstChild.nodeValue = "Reset Search";
+    // calculate percent matched, excluding vertical overlap
+    var count = 0;
+    var lastx = -1;
+    var lastw = 0;
+    var keys = Array();
+    for (k in matches) {
+        if (matches.hasOwnProperty(k))
+            keys.push(k);
+    }
+    // sort the matched frames by their x location
+    // ascending, then width descending
+    keys.sort(function(a, b){
+        return a - b;
+    });
+    // Step through frames saving only the biggest bottom-up frames
+    // thanks to the sort order. This relies on the tree property
+    // where children are always smaller than their parents.
+    for (var k in keys) {
+        var x = parseInt(keys[k]);
+        var w = matches[keys[k]];
+        if (x >= lastx + lastw) {
+            count += w;
+            lastx = x;
+            lastw = w;
+        }
+    }
+    // display matched percent
+    matchedtxt.classList.remove("hide");
+    var pct = 100 * count / maxwidth;
+    if (pct != 100) pct = pct.toFixed(1);
+    matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+}
+function format_percent(n) {
+    return n.toFixed(4) + "%";
+}
+]]></script><rect x="0" y="0" width="100%" height="266" fill="url(#background)"/><text id="title" fill="rgb(0,0,0)" x="50.0000%" y="24.00">py-spy record -o profile.svg -- python compute_partial_lf_for_bootstrap.py</text><text id="details" fill="rgb(0,0,0)" x="10" y="40.00"> </text><text id="unzoom" class="hide" fill="rgb(0,0,0)" x="10" y="24.00">Reset Zoom</text><text id="search" fill="rgb(0,0,0)" x="1190" y="24.00">Search</text><text id="matched" fill="rgb(0,0,0)" x="1190" y="255.00"> </text><svg id="frames" x="10" width="1180" total_samples="99358"><g><title>ravel (numpy/core/fromnumeric.py:1871) (150 samples, 0.15%)</title><rect x="4.6770%" y="164" width="0.1510%" height="15" fill="rgb(227,0,7)" fg:x="4647" fg:w="150"/><text x="4.9270%" y="174.50"></text></g><g><title>ifmr_func (compute_partial_lf_for_bootstrap.py:88) (1,584 samples, 1.59%)</title><rect x="3.7209%" y="148" width="1.5942%" height="15" fill="rgb(217,0,24)" fg:x="3697" fg:w="1584"/><text x="3.9709%" y="158.50"></text></g><g><title>ravel (numpy/core/fromnumeric.py:1874) (469 samples, 0.47%)</title><rect x="4.8431%" y="164" width="0.4720%" height="15" fill="rgb(221,193,54)" fg:x="4812" fg:w="469"/><text x="5.0931%" y="174.50"></text></g><g><title>ifmr_func (compute_partial_lf_for_bootstrap.py:89) (2,617 samples, 2.63%)</title><rect x="5.3151%" y="148" width="2.6339%" height="15" fill="rgb(248,212,6)" fg:x="5281" fg:w="2617"/><text x="5.5651%" y="158.50">if..</text></g><g><title>ifmr_func (compute_partial_lf_for_bootstrap.py:90) (3,153 samples, 3.17%)</title><rect x="7.9490%" y="148" width="3.1734%" height="15" fill="rgb(208,68,35)" fg:x="7898" fg:w="3153"/><text x="8.1990%" y="158.50">ifm..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:205) (7,638 samples, 7.69%)</title><rect x="3.4371%" y="132" width="7.6874%" height="15" fill="rgb(232,128,0)" fg:x="3415" fg:w="7638"/><text x="3.6871%" y="142.50">_integrand ..</text></g><g><title>ravel (numpy/core/fromnumeric.py:1871) (103 samples, 0.10%)</title><rect x="12.1258%" y="164" width="0.1037%" height="15" fill="rgb(207,160,47)" fg:x="12048" fg:w="103"/><text x="12.3758%" y="174.50"></text></g><g><title>imf_func (compute_partial_lf_for_bootstrap.py:57) (1,147 samples, 1.15%)</title><rect x="11.4022%" y="148" width="1.1544%" height="15" fill="rgb(228,23,34)" fg:x="11329" fg:w="1147"/><text x="11.6522%" y="158.50"></text></g><g><title>ravel (numpy/core/fromnumeric.py:1874) (322 samples, 0.32%)</title><rect x="12.2325%" y="164" width="0.3241%" height="15" fill="rgb(218,30,26)" fg:x="12154" fg:w="322"/><text x="12.4825%" y="174.50"></text></g><g><title>imf_func (compute_partial_lf_for_bootstrap.py:58) (2,311 samples, 2.33%)</title><rect x="12.5566%" y="148" width="2.3259%" height="15" fill="rgb(220,122,19)" fg:x="12476" fg:w="2311"/><text x="12.8066%" y="158.50">i..</text></g><g><title>imf_func (compute_partial_lf_for_bootstrap.py:60) (1,062 samples, 1.07%)</title><rect x="14.8825%" y="148" width="1.0689%" height="15" fill="rgb(250,228,42)" fg:x="14787" fg:w="1062"/><text x="15.1325%" y="158.50"></text></g><g><title>imf_func (compute_partial_lf_for_bootstrap.py:61) (2,195 samples, 2.21%)</title><rect x="15.9514%" y="148" width="2.2092%" height="15" fill="rgb(240,193,28)" fg:x="15849" fg:w="2195"/><text x="16.2014%" y="158.50">i..</text></g><g><title>_any (numpy/core/_methods.py:58) (1,746 samples, 1.76%)</title><rect x="16.4033%" y="164" width="1.7573%" height="15" fill="rgb(216,20,37)" fg:x="16298" fg:w="1746"/><text x="16.6533%" y="174.50"></text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:208) (7,001 samples, 7.05%)</title><rect x="11.1244%" y="132" width="7.0462%" height="15" fill="rgb(206,188,39)" fg:x="11053" fg:w="7001"/><text x="11.3744%" y="142.50">_integran..</text></g><g><title>atmosphere_interpolator (WDPhotTools/atmosphere_model_reader.py:460) (3,747 samples, 3.77%)</title><rect x="18.4776%" y="148" width="3.7712%" height="15" fill="rgb(217,207,13)" fg:x="18359" fg:w="3747"/><text x="18.7276%" y="158.50">atmo..</text></g><g><title>atmosphere_interpolator (WDPhotTools/atmosphere_model_reader.py:462) (835 samples, 0.84%)</title><rect x="22.2488%" y="148" width="0.8404%" height="15" fill="rgb(231,73,38)" fg:x="22106" fg:w="835"/><text x="22.4988%" y="158.50"></text></g><g><title>atmosphere_interpolator (WDPhotTools/atmosphere_model_reader.py:465) (328 samples, 0.33%)</title><rect x="23.0923%" y="148" width="0.3301%" height="15" fill="rgb(225,20,46)" fg:x="22944" fg:w="328"/><text x="23.3423%" y="158.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:538) (1,253 samples, 1.26%)</title><rect x="38.7045%" y="164" width="1.2611%" height="15" fill="rgb(210,31,41)" fg:x="38456" fg:w="1253"/><text x="38.9545%" y="174.50"></text></g><g><title>&lt;listcomp&gt; (numpy/lib/stride_tricks.py:538) (903 samples, 0.91%)</title><rect x="39.0567%" y="180" width="0.9088%" height="15" fill="rgb(221,200,47)" fg:x="38806" fg:w="903"/><text x="39.3067%" y="190.50"></text></g><g><title>_broadcast_shape (numpy/lib/stride_tricks.py:422) (838 samples, 0.84%)</title><rect x="40.2957%" y="180" width="0.8434%" height="15" fill="rgb(226,26,5)" fg:x="40037" fg:w="838"/><text x="40.5457%" y="190.50"></text></g><g><title>_broadcast_shape (numpy/lib/stride_tricks.py:424) (252 samples, 0.25%)</title><rect x="41.1391%" y="180" width="0.2536%" height="15" fill="rgb(249,33,26)" fg:x="40875" fg:w="252"/><text x="41.3891%" y="190.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:540) (1,522 samples, 1.53%)</title><rect x="39.9656%" y="164" width="1.5318%" height="15" fill="rgb(235,183,28)" fg:x="39709" fg:w="1522"/><text x="40.2156%" y="174.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:542) (755 samples, 0.76%)</title><rect x="41.4974%" y="164" width="0.7599%" height="15" fill="rgb(221,5,38)" fg:x="41231" fg:w="755"/><text x="41.7474%" y="174.50"></text></g><g><title>&lt;genexpr&gt; (numpy/lib/stride_tricks.py:542) (381 samples, 0.38%)</title><rect x="41.8738%" y="180" width="0.3835%" height="15" fill="rgb(247,18,42)" fg:x="41605" fg:w="381"/><text x="42.1238%" y="190.50"></text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:210) (23,935 samples, 24.09%)</title><rect x="18.1707%" y="132" width="24.0897%" height="15" fill="rgb(241,131,45)" fg:x="18054" fg:w="23935"/><text x="18.4207%" y="142.50">_integrand (WDPhotTools/theoretical_lf..</text></g><g><title>atmosphere_interpolator (WDPhotTools/atmosphere_model_reader.py:468) (18,705 samples, 18.83%)</title><rect x="23.4344%" y="148" width="18.8259%" height="15" fill="rgb(249,31,29)" fg:x="23284" fg:w="18705"/><text x="23.6844%" y="158.50">atmosphere_interpolator (WDPh..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:212) (1,991 samples, 2.00%)</title><rect x="42.2603%" y="132" width="2.0039%" height="15" fill="rgb(225,111,53)" fg:x="41989" fg:w="1991"/><text x="42.5103%" y="142.50">_..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:215) (651 samples, 0.66%)</title><rect x="44.2823%" y="132" width="0.6552%" height="15" fill="rgb(238,160,17)" fg:x="43998" fg:w="651"/><text x="44.5323%" y="142.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:538) (416 samples, 0.42%)</title><rect x="55.8667%" y="148" width="0.4187%" height="15" fill="rgb(214,148,48)" fg:x="55508" fg:w="416"/><text x="56.1167%" y="158.50"></text></g><g><title>&lt;listcomp&gt; (numpy/lib/stride_tricks.py:538) (297 samples, 0.30%)</title><rect x="55.9864%" y="164" width="0.2989%" height="15" fill="rgb(232,36,49)" fg:x="55627" fg:w="297"/><text x="56.2364%" y="174.50"></text></g><g><title>_broadcast_shape (numpy/lib/stride_tricks.py:422) (342 samples, 0.34%)</title><rect x="56.4303%" y="164" width="0.3442%" height="15" fill="rgb(209,103,24)" fg:x="56068" fg:w="342"/><text x="56.6803%" y="174.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:540) (627 samples, 0.63%)</title><rect x="56.2854%" y="148" width="0.6311%" height="15" fill="rgb(229,88,8)" fg:x="55924" fg:w="627"/><text x="56.5354%" y="158.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:542) (384 samples, 0.39%)</title><rect x="56.9164%" y="148" width="0.3865%" height="15" fill="rgb(213,181,19)" fg:x="56551" fg:w="384"/><text x="57.1664%" y="158.50"></text></g><g><title>&lt;genexpr&gt; (numpy/lib/stride_tricks.py:542) (163 samples, 0.16%)</title><rect x="57.1388%" y="164" width="0.1641%" height="15" fill="rgb(254,191,54)" fg:x="56772" fg:w="163"/><text x="57.3888%" y="174.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:341) (262 samples, 0.26%)</title><rect x="57.7256%" y="180" width="0.2637%" height="15" fill="rgb(241,83,37)" fg:x="57355" fg:w="262"/><text x="57.9756%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:342) (148 samples, 0.15%)</title><rect x="57.9893%" y="180" width="0.1490%" height="15" fill="rgb(233,36,39)" fg:x="57617" fg:w="148"/><text x="58.2393%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:345) (371 samples, 0.37%)</title><rect x="58.1694%" y="180" width="0.3734%" height="15" fill="rgb(226,3,54)" fg:x="57796" fg:w="371"/><text x="58.4194%" y="190.50"></text></g><g><title>&lt;genexpr&gt; (numpy/lib/stride_tricks.py:345) (177 samples, 0.18%)</title><rect x="58.3647%" y="196" width="0.1781%" height="15" fill="rgb(245,192,40)" fg:x="57990" fg:w="177"/><text x="58.6147%" y="206.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:349) (1,870 samples, 1.88%)</title><rect x="58.5710%" y="180" width="1.8821%" height="15" fill="rgb(238,167,29)" fg:x="58195" fg:w="1870"/><text x="58.8210%" y="190.50">_..</text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:350) (116 samples, 0.12%)</title><rect x="60.4531%" y="180" width="0.1167%" height="15" fill="rgb(232,182,51)" fg:x="60065" fg:w="116"/><text x="60.7031%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:352) (304 samples, 0.31%)</title><rect x="60.6061%" y="180" width="0.3060%" height="15" fill="rgb(231,60,39)" fg:x="60217" fg:w="304"/><text x="60.8561%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:354) (175 samples, 0.18%)</title><rect x="60.9121%" y="180" width="0.1761%" height="15" fill="rgb(208,69,12)" fg:x="60521" fg:w="175"/><text x="61.1621%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:355) (136 samples, 0.14%)</title><rect x="61.0882%" y="180" width="0.1369%" height="15" fill="rgb(235,93,37)" fg:x="60696" fg:w="136"/><text x="61.3382%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:357) (191 samples, 0.19%)</title><rect x="61.2251%" y="180" width="0.1922%" height="15" fill="rgb(213,116,39)" fg:x="60832" fg:w="191"/><text x="61.4751%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:358) (556 samples, 0.56%)</title><rect x="61.4173%" y="180" width="0.5596%" height="15" fill="rgb(222,207,29)" fg:x="61023" fg:w="556"/><text x="61.6673%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:359) (112 samples, 0.11%)</title><rect x="61.9769%" y="180" width="0.1127%" height="15" fill="rgb(206,96,30)" fg:x="61579" fg:w="112"/><text x="62.2269%" y="190.50"></text></g><g><title>&lt;listcomp&gt; (numpy/lib/stride_tricks.py:546) (4,637 samples, 4.67%)</title><rect x="57.4257%" y="164" width="4.6670%" height="15" fill="rgb(218,138,4)" fg:x="57057" fg:w="4637"/><text x="57.6757%" y="174.50">&lt;list..</text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:546) (4,758 samples, 4.79%)</title><rect x="57.3109%" y="148" width="4.7887%" height="15" fill="rgb(250,191,14)" fg:x="56943" fg:w="4758"/><text x="57.5609%" y="158.50">broadc..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:218) (17,065 samples, 17.18%)</title><rect x="44.9375%" y="132" width="17.1753%" height="15" fill="rgb(239,60,40)" fg:x="44649" fg:w="17065"/><text x="45.1875%" y="142.50">_integrand (WDPhotTools/the..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:220) (678 samples, 0.68%)</title><rect x="62.1128%" y="132" width="0.6824%" height="15" fill="rgb(206,27,48)" fg:x="61714" fg:w="678"/><text x="62.3628%" y="142.50"></text></g><g><title>ms_func (compute_partial_lf_for_bootstrap.py:77) (748 samples, 0.75%)</title><rect x="62.9733%" y="148" width="0.7528%" height="15" fill="rgb(225,35,8)" fg:x="62569" fg:w="748"/><text x="63.2233%" y="158.50"></text></g><g><title>ravel (numpy/core/fromnumeric.py:1874) (184 samples, 0.19%)</title><rect x="63.5409%" y="164" width="0.1852%" height="15" fill="rgb(250,213,24)" fg:x="63133" fg:w="184"/><text x="63.7909%" y="174.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:439) (338 samples, 0.34%)</title><rect x="64.0975%" y="196" width="0.3402%" height="15" fill="rgb(247,123,22)" fg:x="63686" fg:w="338"/><text x="64.3475%" y="206.50"></text></g><g><title>issparse (scipy/_lib/_sparse.py:41) (271 samples, 0.27%)</title><rect x="64.1649%" y="212" width="0.2728%" height="15" fill="rgb(231,138,38)" fg:x="63753" fg:w="271"/><text x="64.4149%" y="222.50"></text></g><g><title>__instancecheck__ (&lt;frozen abc&gt;:119) (141 samples, 0.14%)</title><rect x="64.2958%" y="228" width="0.1419%" height="15" fill="rgb(231,145,46)" fg:x="63883" fg:w="141"/><text x="64.5458%" y="238.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:445) (175 samples, 0.18%)</title><rect x="64.4578%" y="196" width="0.1761%" height="15" fill="rgb(251,118,11)" fg:x="64044" fg:w="175"/><text x="64.7078%" y="206.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:450) (243 samples, 0.24%)</title><rect x="64.7265%" y="196" width="0.2446%" height="15" fill="rgb(217,147,25)" fg:x="64311" fg:w="243"/><text x="64.9765%" y="206.50"></text></g><g><title>issubclass_ (numpy/core/numerictypes.py:320) (256 samples, 0.26%)</title><rect x="65.2127%" y="228" width="0.2577%" height="15" fill="rgb(247,81,37)" fg:x="64794" fg:w="256"/><text x="65.4627%" y="238.50"></text></g><g><title>issubdtype (numpy/core/numerictypes.py:416) (391 samples, 0.39%)</title><rect x="65.1382%" y="212" width="0.3935%" height="15" fill="rgb(209,12,38)" fg:x="64720" fg:w="391"/><text x="65.3882%" y="222.50"></text></g><g><title>issubdtype (numpy/core/numerictypes.py:417) (137 samples, 0.14%)</title><rect x="65.5317%" y="212" width="0.1379%" height="15" fill="rgb(227,1,9)" fg:x="65111" fg:w="137"/><text x="65.7817%" y="222.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:453) (754 samples, 0.76%)</title><rect x="64.9882%" y="196" width="0.7589%" height="15" fill="rgb(248,47,43)" fg:x="64571" fg:w="754"/><text x="65.2382%" y="206.50"></text></g><g><title>_prepare_x (scipy/interpolate/_polyint.py:93) (1,776 samples, 1.79%)</title><rect x="63.9667%" y="180" width="1.7875%" height="15" fill="rgb(221,10,30)" fg:x="63556" fg:w="1776"/><text x="64.2167%" y="190.50">_..</text></g><g><title>__call__ (scipy/interpolate/_polyint.py:81) (2,021 samples, 2.03%)</title><rect x="63.8700%" y="164" width="2.0341%" height="15" fill="rgb(210,229,1)" fg:x="63460" fg:w="2021"/><text x="64.1200%" y="174.50">_..</text></g><g><title>__call__ (scipy/interpolate/_bsplines.py:499) (204 samples, 0.21%)</title><rect x="66.4868%" y="212" width="0.2053%" height="15" fill="rgb(222,148,37)" fg:x="66060" fg:w="204"/><text x="66.7368%" y="222.50"></text></g><g><title>_ensure_c_contiguous (scipy/interpolate/_bsplines.py:547) (129 samples, 0.13%)</title><rect x="66.8029%" y="228" width="0.1298%" height="15" fill="rgb(234,67,33)" fg:x="66374" fg:w="129"/><text x="67.0529%" y="238.50"></text></g><g><title>__call__ (scipy/interpolate/_bsplines.py:508) (233 samples, 0.23%)</title><rect x="66.7485%" y="212" width="0.2345%" height="15" fill="rgb(247,98,35)" fg:x="66320" fg:w="233"/><text x="66.9985%" y="222.50"></text></g><g><title>__call__ (scipy/interpolate/_bsplines.py:516) (126 samples, 0.13%)</title><rect x="66.9830%" y="212" width="0.1268%" height="15" fill="rgb(247,138,52)" fg:x="66553" fg:w="126"/><text x="67.2330%" y="222.50"></text></g><g><title>__call__ (scipy/interpolate/_bsplines.py:525) (261 samples, 0.26%)</title><rect x="67.1320%" y="212" width="0.2627%" height="15" fill="rgb(213,79,30)" fg:x="66701" fg:w="261"/><text x="67.3820%" y="222.50"></text></g><g><title>__call__ (scipy/interpolate/_bsplines.py:528) (462 samples, 0.46%)</title><rect x="67.3947%" y="212" width="0.4650%" height="15" fill="rgb(246,177,23)" fg:x="66962" fg:w="462"/><text x="67.6447%" y="222.50"></text></g><g><title>__call__ (scipy/interpolate/_bsplines.py:533) (333 samples, 0.34%)</title><rect x="67.8657%" y="212" width="0.3352%" height="15" fill="rgb(230,62,27)" fg:x="67430" fg:w="333"/><text x="68.1157%" y="222.50"></text></g><g><title>_evaluate (scipy/interpolate/_interpolate.py:549) (2,201 samples, 2.22%)</title><rect x="66.0198%" y="180" width="2.2152%" height="15" fill="rgb(216,154,8)" fg:x="65596" fg:w="2201"/><text x="66.2698%" y="190.50">_..</text></g><g><title>_call_spline (scipy/interpolate/_interpolate.py:537) (2,110 samples, 2.12%)</title><rect x="66.1114%" y="196" width="2.1236%" height="15" fill="rgb(244,35,45)" fg:x="65687" fg:w="2110"/><text x="66.3614%" y="206.50">_..</text></g><g><title>__call__ (scipy/interpolate/_polyint.py:82) (2,332 samples, 2.35%)</title><rect x="65.9041%" y="164" width="2.3471%" height="15" fill="rgb(251,115,12)" fg:x="65481" fg:w="2332"/><text x="66.1541%" y="174.50">_..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:224) (5,624 samples, 5.66%)</title><rect x="62.8022%" y="132" width="5.6603%" height="15" fill="rgb(240,54,50)" fg:x="62399" fg:w="5624"/><text x="63.0522%" y="142.50">_integr..</text></g><g><title>ms_func (compute_partial_lf_for_bootstrap.py:78) (4,706 samples, 4.74%)</title><rect x="63.7261%" y="148" width="4.7364%" height="15" fill="rgb(233,84,52)" fg:x="63317" fg:w="4706"/><text x="63.9761%" y="158.50">ms_fun..</text></g><g><title>__call__ (scipy/interpolate/_polyint.py:83) (210 samples, 0.21%)</title><rect x="68.2512%" y="164" width="0.2114%" height="15" fill="rgb(207,117,47)" fg:x="67813" fg:w="210"/><text x="68.5012%" y="174.50"></text></g><g><title>_finish_y (scipy/interpolate/_polyint.py:99) (137 samples, 0.14%)</title><rect x="68.3246%" y="180" width="0.1379%" height="15" fill="rgb(249,43,39)" fg:x="67886" fg:w="137"/><text x="68.5746%" y="190.50"></text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:226) (1,039 samples, 1.05%)</title><rect x="68.4625%" y="132" width="1.0457%" height="15" fill="rgb(209,38,44)" fg:x="68023" fg:w="1039"/><text x="68.7125%" y="142.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:439) (163 samples, 0.16%)</title><rect x="70.1322%" y="180" width="0.1641%" height="15" fill="rgb(236,212,23)" fg:x="69682" fg:w="163"/><text x="70.3822%" y="190.50"></text></g><g><title>issparse (scipy/_lib/_sparse.py:41) (135 samples, 0.14%)</title><rect x="70.1604%" y="196" width="0.1359%" height="15" fill="rgb(242,79,21)" fg:x="69710" fg:w="135"/><text x="70.4104%" y="206.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:450) (122 samples, 0.12%)</title><rect x="70.4604%" y="180" width="0.1228%" height="15" fill="rgb(211,96,35)" fg:x="70008" fg:w="122"/><text x="70.7104%" y="190.50"></text></g><g><title>issubclass_ (numpy/core/numerictypes.py:320) (108 samples, 0.11%)</title><rect x="70.7230%" y="212" width="0.1087%" height="15" fill="rgb(253,215,40)" fg:x="70269" fg:w="108"/><text x="70.9730%" y="222.50"></text></g><g><title>issubdtype (numpy/core/numerictypes.py:416) (183 samples, 0.18%)</title><rect x="70.6878%" y="196" width="0.1842%" height="15" fill="rgb(211,81,21)" fg:x="70234" fg:w="183"/><text x="70.9378%" y="206.50"></text></g><g><title>_asarray_validated (scipy/_lib/_util.py:453) (444 samples, 0.45%)</title><rect x="70.5922%" y="180" width="0.4469%" height="15" fill="rgb(208,190,38)" fg:x="70139" fg:w="444"/><text x="70.8422%" y="190.50"></text></g><g><title>_prepare_x (scipy/interpolate/_polyint.py:93) (999 samples, 1.01%)</title><rect x="70.0366%" y="164" width="1.0055%" height="15" fill="rgb(235,213,38)" fg:x="69587" fg:w="999"/><text x="70.2866%" y="174.50"></text></g><g><title>__call__ (scipy/interpolate/_polyint.py:81) (1,137 samples, 1.14%)</title><rect x="69.9843%" y="148" width="1.1443%" height="15" fill="rgb(237,122,38)" fg:x="69535" fg:w="1137"/><text x="70.2343%" y="158.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:479) (1,038 samples, 1.04%)</title><rect x="71.3823%" y="180" width="1.0447%" height="15" fill="rgb(244,218,35)" fg:x="70924" fg:w="1038"/><text x="71.6323%" y="190.50"></text></g><g><title>searchsorted (numpy/core/fromnumeric.py:1400) (823 samples, 0.83%)</title><rect x="71.5987%" y="196" width="0.8283%" height="15" fill="rgb(240,68,47)" fg:x="71139" fg:w="823"/><text x="71.8487%" y="206.50"></text></g><g><title>_wrapfunc (numpy/core/fromnumeric.py:59) (524 samples, 0.53%)</title><rect x="71.8996%" y="212" width="0.5274%" height="15" fill="rgb(210,16,53)" fg:x="71438" fg:w="524"/><text x="72.1496%" y="222.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:484) (1,584 samples, 1.59%)</title><rect x="72.4270%" y="180" width="1.5942%" height="15" fill="rgb(235,124,12)" fg:x="71962" fg:w="1584"/><text x="72.6770%" y="190.50"></text></g><g><title>_clip (numpy/core/_methods.py:99) (972 samples, 0.98%)</title><rect x="73.0429%" y="196" width="0.9783%" height="15" fill="rgb(224,169,11)" fg:x="72574" fg:w="972"/><text x="73.2929%" y="206.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:487) (576 samples, 0.58%)</title><rect x="74.0212%" y="180" width="0.5797%" height="15" fill="rgb(250,166,2)" fg:x="73546" fg:w="576"/><text x="74.2712%" y="190.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:490) (207 samples, 0.21%)</title><rect x="74.6120%" y="180" width="0.2083%" height="15" fill="rgb(242,216,29)" fg:x="74133" fg:w="207"/><text x="74.8620%" y="190.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:492) (976 samples, 0.98%)</title><rect x="74.9180%" y="180" width="0.9823%" height="15" fill="rgb(230,116,27)" fg:x="74437" fg:w="976"/><text x="75.1680%" y="190.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:493) (502 samples, 0.51%)</title><rect x="75.9003%" y="180" width="0.5052%" height="15" fill="rgb(228,99,48)" fg:x="75413" fg:w="502"/><text x="76.1503%" y="190.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:497) (1,109 samples, 1.12%)</title><rect x="76.4055%" y="180" width="1.1162%" height="15" fill="rgb(253,11,6)" fg:x="75915" fg:w="1109"/><text x="76.6555%" y="190.50"></text></g><g><title>_call_linear (scipy/interpolate/_interpolate.py:500) (834 samples, 0.84%)</title><rect x="77.5217%" y="180" width="0.8394%" height="15" fill="rgb(247,143,39)" fg:x="77024" fg:w="834"/><text x="77.7717%" y="190.50"></text></g><g><title>_evaluate (scipy/interpolate/_interpolate.py:549) (7,131 samples, 7.18%)</title><rect x="71.1921%" y="164" width="7.1771%" height="15" fill="rgb(236,97,10)" fg:x="70735" fg:w="7131"/><text x="71.4421%" y="174.50">_evaluate ..</text></g><g><title>__call__ (scipy/interpolate/_polyint.py:82) (7,210 samples, 7.26%)</title><rect x="71.1286%" y="148" width="7.2566%" height="15" fill="rgb(233,208,19)" fg:x="70672" fg:w="7210"/><text x="71.3786%" y="158.50">__call__ (..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:231) (9,067 samples, 9.13%)</title><rect x="69.5153%" y="132" width="9.1256%" height="15" fill="rgb(216,164,2)" fg:x="69069" fg:w="9067"/><text x="69.7653%" y="142.50">_integrand (W..</text></g><g><title>__call__ (scipy/interpolate/_polyint.py:83) (254 samples, 0.26%)</title><rect x="78.3852%" y="148" width="0.2556%" height="15" fill="rgb(220,129,5)" fg:x="77882" fg:w="254"/><text x="78.6352%" y="158.50"></text></g><g><title>_finish_y (scipy/interpolate/_polyint.py:99) (175 samples, 0.18%)</title><rect x="78.4647%" y="164" width="0.1761%" height="15" fill="rgb(242,17,10)" fg:x="77961" fg:w="175"/><text x="78.7147%" y="174.50"></text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:233) (539 samples, 0.54%)</title><rect x="78.6409%" y="132" width="0.5425%" height="15" fill="rgb(242,107,0)" fg:x="78136" fg:w="539"/><text x="78.8909%" y="142.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:538) (573 samples, 0.58%)</title><rect x="91.9634%" y="148" width="0.5767%" height="15" fill="rgb(251,28,31)" fg:x="91373" fg:w="573"/><text x="92.2134%" y="158.50"></text></g><g><title>&lt;listcomp&gt; (numpy/lib/stride_tricks.py:538) (409 samples, 0.41%)</title><rect x="92.1285%" y="164" width="0.4116%" height="15" fill="rgb(233,223,10)" fg:x="91537" fg:w="409"/><text x="92.3785%" y="174.50"></text></g><g><title>_broadcast_shape (numpy/lib/stride_tricks.py:422) (401 samples, 0.40%)</title><rect x="92.7344%" y="164" width="0.4036%" height="15" fill="rgb(215,21,27)" fg:x="92139" fg:w="401"/><text x="92.9844%" y="174.50"></text></g><g><title>_broadcast_shape (numpy/lib/stride_tricks.py:424) (134 samples, 0.13%)</title><rect x="93.1379%" y="164" width="0.1349%" height="15" fill="rgb(232,23,21)" fg:x="92540" fg:w="134"/><text x="93.3879%" y="174.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:540) (790 samples, 0.80%)</title><rect x="92.5401%" y="148" width="0.7951%" height="15" fill="rgb(244,5,23)" fg:x="91946" fg:w="790"/><text x="92.7901%" y="158.50"></text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:542) (456 samples, 0.46%)</title><rect x="93.3352%" y="148" width="0.4589%" height="15" fill="rgb(226,81,46)" fg:x="92736" fg:w="456"/><text x="93.5852%" y="158.50"></text></g><g><title>&lt;genexpr&gt; (numpy/lib/stride_tricks.py:542) (215 samples, 0.22%)</title><rect x="93.5778%" y="164" width="0.2164%" height="15" fill="rgb(247,70,30)" fg:x="92977" fg:w="215"/><text x="93.8278%" y="174.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:341) (265 samples, 0.27%)</title><rect x="94.2048%" y="180" width="0.2667%" height="15" fill="rgb(212,68,19)" fg:x="93600" fg:w="265"/><text x="94.4548%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:342) (157 samples, 0.16%)</title><rect x="94.4715%" y="180" width="0.1580%" height="15" fill="rgb(240,187,13)" fg:x="93865" fg:w="157"/><text x="94.7215%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:345) (368 samples, 0.37%)</title><rect x="94.6517%" y="180" width="0.3704%" height="15" fill="rgb(223,113,26)" fg:x="94044" fg:w="368"/><text x="94.9017%" y="190.50"></text></g><g><title>&lt;genexpr&gt; (numpy/lib/stride_tricks.py:345) (169 samples, 0.17%)</title><rect x="94.8519%" y="196" width="0.1701%" height="15" fill="rgb(206,192,2)" fg:x="94243" fg:w="169"/><text x="95.1019%" y="206.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:349) (1,753 samples, 1.76%)</title><rect x="95.0492%" y="180" width="1.7643%" height="15" fill="rgb(241,108,4)" fg:x="94439" fg:w="1753"/><text x="95.2992%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:350) (135 samples, 0.14%)</title><rect x="96.8135%" y="180" width="0.1359%" height="15" fill="rgb(247,173,49)" fg:x="96192" fg:w="135"/><text x="97.0635%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:352) (244 samples, 0.25%)</title><rect x="96.9917%" y="180" width="0.2456%" height="15" fill="rgb(224,114,35)" fg:x="96369" fg:w="244"/><text x="97.2417%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:354) (158 samples, 0.16%)</title><rect x="97.2373%" y="180" width="0.1590%" height="15" fill="rgb(245,159,27)" fg:x="96613" fg:w="158"/><text x="97.4873%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:355) (148 samples, 0.15%)</title><rect x="97.3963%" y="180" width="0.1490%" height="15" fill="rgb(245,172,44)" fg:x="96771" fg:w="148"/><text x="97.6463%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:357) (150 samples, 0.15%)</title><rect x="97.5452%" y="180" width="0.1510%" height="15" fill="rgb(236,23,11)" fg:x="96919" fg:w="150"/><text x="97.7952%" y="190.50"></text></g><g><title>_broadcast_to (numpy/lib/stride_tricks.py:358) (502 samples, 0.51%)</title><rect x="97.6962%" y="180" width="0.5052%" height="15" fill="rgb(205,117,38)" fg:x="97069" fg:w="502"/><text x="97.9462%" y="190.50"></text></g><g><title>&lt;listcomp&gt; (numpy/lib/stride_tricks.py:546) (4,350 samples, 4.38%)</title><rect x="93.9109%" y="164" width="4.3781%" height="15" fill="rgb(237,72,25)" fg:x="93308" fg:w="4350"/><text x="94.1609%" y="174.50">&lt;list..</text></g><g><title>broadcast_arrays (numpy/lib/stride_tricks.py:546) (4,470 samples, 4.50%)</title><rect x="93.7992%" y="148" width="4.4989%" height="15" fill="rgb(244,70,9)" fg:x="93197" fg:w="4470"/><text x="94.0492%" y="158.50">broad..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:237) (19,001 samples, 19.12%)</title><rect x="79.1914%" y="132" width="19.1238%" height="15" fill="rgb(217,125,39)" fg:x="78683" fg:w="19001"/><text x="79.4414%" y="142.50">_integrand (WDPhotTools/theore..</text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:239) (550 samples, 0.55%)</title><rect x="98.3152%" y="132" width="0.5536%" height="15" fill="rgb(235,36,10)" fg:x="97684" fg:w="550"/><text x="98.5652%" y="142.50"></text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:241) (390 samples, 0.39%)</title><rect x="98.8687%" y="132" width="0.3925%" height="15" fill="rgb(251,123,47)" fg:x="98234" fg:w="390"/><text x="99.1187%" y="142.50"></text></g><g><title>_integrand (WDPhotTools/theoretical_lf.py:242) (571 samples, 0.57%)</title><rect x="99.2613%" y="132" width="0.5747%" height="15" fill="rgb(221,13,13)" fg:x="98624" fg:w="571"/><text x="99.5113%" y="142.50"></text></g><g><title>quad (scipy/integrate/_quadpack_py.py:460) (99,154 samples, 99.79%)</title><rect x="0.0543%" y="100" width="99.7947%" height="15" fill="rgb(238,131,9)" fg:x="54" fg:w="99154"/><text x="0.3043%" y="110.50">quad (scipy/integrate/_quadpack_py.py:460)</text></g><g><title>_quad (scipy/integrate/_quadpack_py.py:620) (99,154 samples, 99.79%)</title><rect x="0.0543%" y="116" width="99.7947%" height="15" fill="rgb(211,50,8)" fg:x="54" fg:w="99154"/><text x="0.3043%" y="126.50">_quad (scipy/integrate/_quadpack_py.py:620)</text></g><g><title>&lt;module&gt; (compute_partial_lf_for_bootstrap.py:128) (99,179 samples, 99.82%)</title><rect x="0.0302%" y="68" width="99.8198%" height="15" fill="rgb(245,182,24)" fg:x="30" fg:w="99179"/><text x="0.2802%" y="78.50">&lt;module&gt; (compute_partial_lf_for_bootstrap.py:128)</text></g><g><title>compute_density (WDPhotTools/theoretical_lf.py:706) (99,155 samples, 99.80%)</title><rect x="0.0543%" y="84" width="99.7957%" height="15" fill="rgb(242,14,37)" fg:x="54" fg:w="99155"/><text x="0.3043%" y="94.50">compute_density (WDPhotTools/theoretical_lf.py:706)</text></g><g><title>all (99,358 samples, 100%)</title><rect x="0.0000%" y="52" width="100.0000%" height="15" fill="rgb(246,228,12)" fg:x="0" fg:w="99358"/><text x="0.2500%" y="62.50"></text></g></svg></svg>

@@ -231,22 +231,11 @@ mor_sfh = np.append(mor_sfh, 0.0)
 mor_sigma_up = np.append(mor_sigma_up, 0.0)
 mor_sigma_low = np.append(mor_sigma_low, 0.0)
 
-# Tremblay+ 2014 (only relative SFH)
-tremblay_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_tremblay_2014_sfh.csv", delimiter=",")
-tremblay_time = tremblay_data[:, 0]
-tremblay_sfh = tremblay_data[:, 1]
-tremblay_sigma_up = tremblay_data[:, 2]
-tremblay_sigma_low = tremblay_data[:, 3]
-# append for plotting the first bin
-tremblay_time = np.insert(tremblay_time, 0, 2.0 * tremblay_time[0] - tremblay_time[1])
-tremblay_sfh = np.insert(tremblay_sfh, 0, 0.0)
-tremblay_sigma_up = np.insert(tremblay_sigma_up, 0, 0.0)
-tremblay_sigma_low = np.insert(tremblay_sigma_low, 0, 0.0)
-# append for plotting the last bin
-tremblay_time = np.append(tremblay_time, 2.0 * tremblay_time[-1] - tremblay_time[-2])
-tremblay_sfh = np.append(tremblay_sfh, 0.0)
-tremblay_sigma_up = np.append(tremblay_sigma_up, 0.0)
-tremblay_sigma_low = np.append(tremblay_sigma_low, 0.0)
+# Roberts+ 2025 (only relative SFH)
+roberts_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_roberts_2025_sfh.csv", delimiter=",")
+roberts_time = roberts_data[:, 0]
+roberts_sfh = roberts_data[:, 1]
+
 
 # Reid+ 2007 (only relative SFH)
 reid_data = np.loadtxt(r"SFH-WDLF-article/figure_data/fig_10_reid_2007_sfh.csv", delimiter=",")
@@ -394,7 +383,6 @@ normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset * reso
 # These are to normalise to match the GCNS WDLF integrated number density
 normalisation_cignoni = np.sum(obs_wdlf_optimal) / (cignoni_sfh @ cignoni_time) / 0.6
 normalisation_mor = 1.0
-normalisation_tremblay = np.sum(obs_wdlf_optimal) / np.sum(tremblay_sfh @ tremblay_time)
 normalisation_reid = np.sum(solution_optimal_lsq) / np.sum(reid_sfh) * 0.1
 
 # get the bootstrapped SFH
@@ -569,7 +557,18 @@ ax4.step(
 )
 
 h, b = np.histogram(nataf_age, bins=75, range=(0, 15))
+
+# plot Nataf+ data (N)
 ax4.step(b[:-1], h/max(h), where="post", label="Nataf+ 2024")
+
+
+# plot Roberts+ data
+ax4.step(
+    roberts_time,
+    roberts_sfh / np.nanmax(roberts_sfh),
+    where="post",
+    label="Roberts+ 2025",
+)
 
 ax1.grid()
 ax2.grid()

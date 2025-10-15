@@ -255,10 +255,7 @@ solution_optimal_20pc_subset = np.append(solution_optimal_20pc_subset, 0.0)
 solution_upper_20pc_subset = np.append(solution_upper_20pc_subset, 0.0)
 solution_lower_20pc_subset = np.append(solution_lower_20pc_subset, 0.0)
 
-normalisation_this_work = (
-    np.sum(obs_wdlf_optimal * resolution_optimal)
-    / np.sum(recomputed_wdlf_optimal_lsq)
-)
+normalisation_this_work = np.sum(obs_wdlf_optimal * resolution_optimal) / np.sum(recomputed_wdlf_optimal_lsq)
 normalisation_this_work_20pc_subset = np.sum(obs_wdlf_optimal_20pc_subset * resolution_optimal) / np.sum(
     recomputed_wdlf_optimal_lsq_20pc_subset
 )
@@ -366,11 +363,7 @@ fig1.savefig(
 )
 
 # Prepare to output CSV of the reconstructed WDLFs
-wdlf_output = (
-    recomputed_wdlf_optimal_lsq
-    / np.nansum(recomputed_wdlf_optimal_lsq)
-    * np.nansum(obs_wdlf_optimal)
-)
+wdlf_output = recomputed_wdlf_optimal_lsq / np.nansum(recomputed_wdlf_optimal_lsq) * np.nansum(obs_wdlf_optimal)
 
 wdlf_err_output = obs_wdlf_err_optimal
 wdlf_20_output = (

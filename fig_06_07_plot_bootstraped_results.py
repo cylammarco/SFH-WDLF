@@ -316,7 +316,7 @@ ax1.arrow(3.67, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k"
 ax1.arrow(8.7, 0.0049, 0.0, -0.0004, head_width=0.2, head_length=0.0001, fc="k", ec="k")
 ax1.text(5.9, 0.00425, "Full sample", fontsize=14)
 
-plt.subplots_adjust(top=0.98, bottom=0.08, left=0.1, right=0.98, hspace=0.0)
+plt.subplots_adjust(top=0.98, bottom=0.08, left=0.12, right=0.98, hspace=0.0)
 plt.savefig(f"{figure_folder}/fig_06_sfh_bootstrap_comparison.png", dpi=300)
 
 
@@ -406,11 +406,18 @@ plt.savefig(f"{figure_folder}/fig_08_sfh_peak_significance_20pc_subset.png", dpi
 
 np.savetxt(
     f"{figure_data_folder}/fig_06_sfh_bootstrap_data.csv",
-    np.column_stack((sfh_age, sfh_mean, sfh_stdev)),
+    np.column_stack(
+        (
+            sfh_age,
+            sfh_mean / np.nansum(solution_optimal) * normalisation_this_work,
+            sfh_stdev / np.nansum(solution_optimal) * normalisation_this_work,
+        )
+    ),
     delimiter=",",
     header="age[Gyr], mean[N/Gyr/pc^3], stdev[N/Gyr/pc^3]",
     comments="",
 )
+"""
 np.savetxt(
     f"{figure_data_folder}/fig_06_sfh_bootstrap_20pc_subset_data.csv",
     np.column_stack((sfh_age, sfh_20pc_mean, sfh_20pc_stdev)),
@@ -418,3 +425,4 @@ np.savetxt(
     header="age[Gyr], mean[N/Gyr/pc^3], stdev[N/Gyr/pc^3]",
     comments="",
 )
+"""
